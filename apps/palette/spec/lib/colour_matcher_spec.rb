@@ -85,8 +85,8 @@ RSpec.describe ColourMatcher do
   end
 
   describe "#similar_artworks" do
-    it "returns nothing when the artwork has no palette and no seed is given" do
-      expect(matcher.similar_artworks(1)).to eq([])
+    it "returns nothing for an artwork that is not in the database" do
+      expect(matcher.similar_artworks(-1)).to eq([])
     end
   end
 end

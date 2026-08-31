@@ -33,6 +33,15 @@ echo "==> Running web specs"
 ) || status=1
 
 echo "==> Running palette specs"
-(cd apps/palette && bundle exec rspec) || status=1
+(
+  cd apps/palette
+  # The palette service talks to Postgres directly, so it needs the same swap
+  # the web app gets. Without it these specs read the development database and
+  # pass or fail on whatever happens to be seeded there.
+  if [[ -n "${DATABASE_URL:-}" ]]; then
+    export DATABASE_URL="${DATABASE_URL/bluethumb_art_nano_development/bluethumb_art_nano_test}"
+  fi
+  bundle exec rspec
+) || status=1
 
 exit $status

@@ -21,14 +21,22 @@ class PaletteExtractor
     :not_implemented
   end
 
-  def extract_from_rgb(r, g, b)
-    l, a, b = rgb_to_lab(r, g, b)
-    hue = lab_to_hue(a, b)
+  def extract_from_rgb(red, green, blue)
+    # Name the LAB axes apart from the RGB channels. They were both called
+    # b, so the swatch hex was built from the b* axis - usually negative -
+    # rather than from the blue channel.
+    lightness, a_axis, b_axis = rgb_to_lab(red, green, blue)
+    hue = lab_to_hue(a_axis, b_axis)
+
     {
       hue_family: hue_family_for(hue),
-      centroid: { l: l.round(2), a: a.round(2), b: b.round(2) },
+      centroid: { l: lightness.round(2), a: a_axis.round(2), b: b_axis.round(2) },
       swatches: [
-        { hex: rgb_to_hex(r, g, b), population: 1.0, lab: { l: l, a: a, b: b } }
+        {
+          hex: rgb_to_hex(red, green, blue),
+          population: 1.0,
+          lab: { l: lightness, a: a_axis, b: b_axis }
+        }
       ],
       extracted_at: Time.now.utc.iso8601
     }
@@ -88,7 +96,7 @@ class PaletteExtractor
     "neutral"
   end
 
-  def rgb_to_hex(r, g, b)
-    format("#%02x%02x%02x", r, g, b)
+  def rgb_to_hex(*channels)
+    format("#%02x%02x%02x", *channels.map { |channel| Integer(channel.round).clamp(0, 255) })
   end
 end
