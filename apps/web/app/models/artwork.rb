@@ -10,6 +10,7 @@ class Artwork < ApplicationRecord
   HUE_FAMILIES = %w[red orange yellow green blue purple neutral].freeze
   FRAMING_OPTIONS = %w[natural black white].freeze
   FRAMING_PRICE_CENTS = 25_000
+  MAX_SWATCHES = 6
 
   belongs_to :artist
   has_one_attached :image
@@ -71,6 +72,22 @@ class Artwork < ApplicationRecord
     label = parts.join(" × ")
     label += " cm" unless label.include?("cm")
     label
+  end
+
+  # Swatches the palette service extracted, normalised for display. Anything
+  # malformed is dropped rather than rendered, so a half-written palette can
+  # never break the artwork page.
+  def palette_swatches(limit: MAX_SWATCHES)
+    raw = palette_data.is_a?(Hash) ? palette_data["swatches"] : nil
+
+    Array(raw).filter_map do |swatch|
+      next unless swatch.is_a?(Hash)
+
+      hex = swatch["hex"].to_s.downcase
+      next unless hex.match?(/\A#\h{6}\z/)
+
+      { "hex" => hex, "population" => swatch["population"].to_f }
+    end.first(limit)
   end
 
   def to_param

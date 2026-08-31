@@ -16,10 +16,20 @@ alwaysApply: false
 
 ## Vue 3 conventions
 
-- Composition API (`<script setup>`) — not Options API unless maintaining existing code
-- Mount: `createApp(Component).mount('#colour-picker')`
-- Props from Rails via `data-*` attributes on the mount element
-- Fetch palette API at `/palette/...` (Hanami); handle loading and error states
+- **No build step.** Vue is vendored at `vendor/javascript/vue.esm-browser.prod.js`
+  and pinned in the importmap. That is the full browser build, so islands are
+  plain `.js` modules exporting a component with a `template` string — SFCs
+  would need a bundler, and one island does not justify one yet.
+- Composition API (`setup()` with `ref`/`computed`) — not Options API
+- Register the component in `app/javascript/islands/index.js`; the registry
+  mounts anything carrying `data-island-component` and unmounts on
+  `turbo:before-cache`
+- Props from Rails as JSON in `data-island-props` on the mount element
+- Fetch a **Rails** JSON endpoint (e.g. `/artworks/:slug/colour-matches`), not
+  Hanami directly: colour ranking stays in the palette service, presentation
+  (titles, prices, URLs, image variants) stays in Rails
+- Handle loading, empty, and error states explicitly; guard against
+  out-of-order responses
 - Keep islands self-contained; no global Vue app wrapping the page
 
 ## Styling

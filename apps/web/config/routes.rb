@@ -16,6 +16,7 @@ Rails.application.routes.draw do
   resource :checkout, only: %i[show create]
   get "checkout/thank-you", to: "checkouts#thank_you", as: :checkout_thank_you
 
+  get "artworks/:slug/colour-matches", to: "artworks#colour_matches", as: :artwork_colour_matches
   get "artworks/:slug", to: "artworks#show", as: :artwork, constraints: ArtworkSlugConstraint
   get "artworks(/*facets)", to: "artworks#index", as: :artworks
   get "artists/:slug", to: "artists#show", as: :artist

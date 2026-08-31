@@ -33,6 +33,43 @@ RSpec.describe Artwork do
     end
   end
 
+  describe "#palette_swatches" do
+    it "returns normalised swatches from palette_data" do
+      artwork = build(:artwork, :with_swatches)
+
+      expect(artwork.palette_swatches).to eq(
+        [
+          { "hex" => "#3366cc", "population" => 0.5 },
+          { "hex" => "#ddeeff", "population" => 0.3 }
+        ]
+      )
+    end
+
+    it "returns an empty array when no palette has been extracted" do
+      expect(build(:artwork).palette_swatches).to eq([])
+    end
+
+    it "drops malformed swatches rather than rendering them" do
+      artwork = build(:artwork, palette_data: {
+                        "swatches" => [
+                          { "hex" => "#3366CC", "population" => 0.4 },
+                          { "hex" => "not-a-colour" },
+                          { "population" => 0.1 },
+                          "nonsense"
+                        ]
+                      })
+
+      expect(artwork.palette_swatches).to eq([{ "hex" => "#3366cc", "population" => 0.4 }])
+    end
+
+    it "caps the number of swatches" do
+      swatches = Array.new(10) { |i| { "hex" => format("#%06x", i), "population" => 0.1 } }
+      artwork = build(:artwork, palette_data: { "swatches" => swatches })
+
+      expect(artwork.palette_swatches.size).to eq(Artwork::MAX_SWATCHES)
+    end
+  end
+
   describe "#sold?" do
     it "returns true when status is sold" do
       artwork = build(:artwork, :sold)

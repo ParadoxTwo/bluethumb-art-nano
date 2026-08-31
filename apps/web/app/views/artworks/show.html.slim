@@ -90,3 +90,8 @@ nav.text-sm.text-stone-600.mb-6 aria-label="Breadcrumb"
       div class="grid grid-cols-2 md:grid-cols-3 gap-4"
         - @similar_by_colour.each do |artwork|
           = render "tile", artwork: artwork
+
+  - if @artwork.palette_swatches.any?
+    / Vue island. Empty in the server HTML on purpose: with JavaScript off this
+    / renders nothing and the static rail above remains the whole feature.
+    div data-island-component="ColourPicker" data-island-props=(colour_picker_props(@artwork).to_json)

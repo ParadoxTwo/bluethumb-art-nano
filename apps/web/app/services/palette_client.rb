@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "cgi"
+
 class PaletteClient
   class Error < StandardError; end
 
@@ -15,8 +17,12 @@ class PaletteClient
     post("/colour/extract", body: { artwork_id: artwork_id, force: force })
   end
 
-  def similar(artwork_id)
-    get("/colour/similar/#{artwork_id}")
+  # hex ranks against a colour the buyer picked; omitted, the service ranks
+  # against the artwork's own palette centroid.
+  def similar(artwork_id, hex: nil)
+    path = "/colour/similar/#{artwork_id}"
+    path = "#{path}?hex=#{CGI.escape(hex.to_s.delete_prefix('#'))}" if hex.present?
+    get(path)
   end
 
   private

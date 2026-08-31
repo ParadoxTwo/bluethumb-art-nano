@@ -30,6 +30,10 @@ Claude does not auto-apply `.mdc` globs — read the matching rule file before e
 - Stay in the active phase — no payments, OAuth, messaging, or Elasticsearch unless asked.
 - Small, logical commits; the message explains *why*.
 
+## Vue islands
+
+Vue 3 is vendored (`apps/web/vendor/javascript/vue.esm-browser.prod.js`) and pinned in the importmap — no bundler, no CDN at runtime. Islands are plain JS modules with `template` strings, registered in `app/javascript/islands/index.js`, mounted into `[data-island-component]` placeholders with props as JSON in `data-island-props`. An island must never be load-bearing: the server HTML is the whole feature without it. Islands fetch Rails JSON endpoints; Rails calls the palette service.
+
 ## Known gotchas
 
 - Hanami action instances are frozen — do not memoize with `@ivar` inside actions.

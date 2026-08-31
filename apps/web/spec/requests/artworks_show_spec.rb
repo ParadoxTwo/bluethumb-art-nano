@@ -43,6 +43,29 @@ RSpec.describe "Artwork show", type: :request do
       expect(response.body).to include("Colour Neighbour")
     end
 
+    it "renders the colour island mount point when swatches exist" do
+      require "webmock/rspec"
+
+      source = create(:artwork, :with_swatches, artist: artist, title: "Swatched", slug: "swatched")
+
+      WebMock.disable_net_connect!
+      stub_palette_similar(source.id, returning: [])
+
+      get artwork_path(source.slug)
+
+      expect(response.body).to include('data-island-component="ColourPicker"')
+      expect(response.body).to include("#3366cc")
+      expect(response.body).to include(artwork_colour_matches_path(source.slug))
+    end
+
+    it "omits the colour island when the artwork has no swatches" do
+      artwork = create(:artwork, artist: artist, title: "No Palette", slug: "no-palette")
+
+      get artwork_path(artwork.slug)
+
+      expect(response.body).not_to include("data-island-component")
+    end
+
     it "omits similar-by-colour section when palette service is unavailable" do
       require "webmock/rspec"
 

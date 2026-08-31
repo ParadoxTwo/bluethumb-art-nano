@@ -1,12 +1,15 @@
 # frozen_string_literal: true
 
 module PaletteWebmock
-  def stub_palette_similar(source_id, returning:)
+  def stub_palette_similar(source_id, returning:, hex: nil)
     artworks = Array(returning).map do |entry|
       entry.is_a?(Hash) ? entry : { id: entry.id, distance: 0.1 }
     end
 
-    stub_request(:get, "http://localhost:9292/colour/similar/#{source_id}")
+    request = stub_request(:get, "http://localhost:9292/colour/similar/#{source_id}")
+    request = request.with(query: { "hex" => hex.to_s.delete_prefix("#") }) if hex
+
+    request
       .to_return(
         status: 200,
         body: { artworks: artworks }.to_json,

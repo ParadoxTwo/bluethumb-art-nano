@@ -1,28 +1,59 @@
-// Vue island stubs — colour picker mounts on artwork detail when present
-const ISLANDS = {
-  ColourPicker: {
-    mount(el) {
-      el.textContent = ""
-      const artworkId = el.dataset.artworkId
-      const wrapper = document.createElement("div")
-      wrapper.className = "text-sm text-stone-600 p-4 border border-dashed rounded bg-stone-50"
-      const p = document.createElement("p")
-      p.className = "text-sm text-stone-600"
-      p.textContent = artworkId
-        ? `Colour picker for artwork #${artworkId} — connects to /palette/colour/similar/${artworkId}.`
-        : "Colour picker — browse artworks to explore palette similarity."
-      wrapper.appendChild(p)
-    }
+// Island registry.
+//
+// Islands architecture: the server owns the document, and a handful of small
+// interactive regions boot independently inside placeholders it rendered.
+// Nothing essential on a page may depend on an island mounting — if Vue fails
+// to load, the server HTML is still a complete, usable page.
+//
+// A mount point is any element carrying data-island-component; props arrive as
+// JSON in data-island-props.
+import { createApp } from "vue"
+import ColourPicker from "islands/colour_picker"
+
+const ISLANDS = { ColourPicker }
+const mountedApps = new Map()
+
+function propsFor(element) {
+  const raw = element.dataset.islandProps
+  if (!raw) return {}
+
+  try {
+    return JSON.parse(raw)
+  } catch (error) {
+    console.warn("[islands] ignoring invalid data-island-props", error)
+    return {}
   }
 }
 
 function mountIslands() {
-  document.querySelectorAll("[data-island-component]").forEach((el) => {
-    const name = el.dataset.islandComponent
-    const island = ISLANDS[name]
-    if (island) island.mount(el)
+  document.querySelectorAll("[data-island-component]").forEach((element) => {
+    if (mountedApps.has(element)) return
+
+    const name = element.dataset.islandComponent
+    const component = ISLANDS[name]
+    if (!component) {
+      console.warn("[islands] no component registered for", name)
+      return
+    }
+
+    try {
+      const app = createApp(component, propsFor(element))
+      app.config.errorHandler = (error) => console.error("[islands] " + name + " threw", error)
+      app.mount(element)
+      mountedApps.set(element, app)
+    } catch (error) {
+      console.error("[islands] " + name + " failed to mount", error)
+    }
   })
+}
+
+// Turbo caches a snapshot of the DOM before navigating away. Unmounting first
+// keeps a half-torn-down Vue tree out of that snapshot.
+function unmountIslands() {
+  mountedApps.forEach((app) => app.unmount())
+  mountedApps.clear()
 }
 
 document.addEventListener("DOMContentLoaded", mountIslands)
 document.addEventListener("turbo:load", mountIslands)
+document.addEventListener("turbo:before-cache", unmountIslands)

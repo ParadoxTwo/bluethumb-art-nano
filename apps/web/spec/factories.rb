@@ -34,6 +34,19 @@ FactoryBot.define do
       palette_centroid_b { -8.0 }
       palette_data { { "hue_family" => "blue" } }
     end
+
+    trait :with_swatches do
+      with_palette
+      palette_data do
+        {
+          "hue_family" => "blue",
+          "swatches" => [
+            { "hex" => "#3366cc", "population" => 0.5 },
+            { "hex" => "#ddeeff", "population" => 0.3 }
+          ]
+        }
+      end
+    end
   end
 
   factory :cart do

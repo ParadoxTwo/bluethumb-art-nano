@@ -43,16 +43,26 @@ paths:
           description: Palette extracted
   /colour/similar/{artwork_id}:
     get:
-      summary: Similar artworks by palette (Phase 1 stub)
+      summary: Similar artworks by palette, ranked in CIELAB
       parameters:
         - name: artwork_id
           in: path
           required: true
           schema:
             type: integer
+        - name: hex
+          in: query
+          required: false
+          description: >-
+            Seed colour to rank against, with or without the leading hash.
+            Omitted, the artwork's own palette centroid is the seed.
+          schema:
+            type: string
+            pattern: "^#?[0-9a-fA-F]{6}$"
+          example: "3366cc"
       responses:
         "200":
-          description: Ranked similar artworks
+          description: Ranked similar artworks, closest first
           content:
             application/json:
               schema:
@@ -60,9 +70,23 @@ paths:
                 properties:
                   artworks:
                     type: array
-                    items: { type: object }
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer }
+                        distance: { type: number }
                   meta:
                     type: object
+                    properties:
+                      count: { type: integer }
+                      query_ms: { type: integer }
+                      seed:
+                        type: object
+                        description: >-
+                          { artwork_id } when ranking against the artwork's own
+                          centroid, { hex, lab } when a seed colour was given.
+        "422":
+          description: Malformed seed colour
   /colour/match-room:
     post:
       summary: Rank artworks by room photo palette (Phase 1 stub)

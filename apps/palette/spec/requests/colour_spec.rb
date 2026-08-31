@@ -30,6 +30,23 @@ RSpec.describe "Colour API", type: :request do
       expect(body).to include("artworks", "meta")
       expect(body["meta"]).to include("count", "query_ms")
     end
+
+    it "accepts a seed colour and echoes it in meta" do
+      get "/colour/similar/1", { hex: "#3366cc" }
+
+      expect(last_response.status).to eq(200)
+      body = JSON.parse(last_response.body)
+      expect(body.dig("meta", "seed", "hex")).to eq("#3366cc")
+      expect(body.dig("meta", "seed", "lab")).to include("l", "a", "b")
+    end
+
+    it "rejects a malformed seed colour" do
+      get "/colour/similar/1", { hex: "octarine" }
+
+      expect(last_response.status).to eq(422)
+      body = JSON.parse(last_response.body)
+      expect(body.dig("error", "code")).to eq("validation_error")
+    end
   end
 
   describe "POST /colour/match-room" do

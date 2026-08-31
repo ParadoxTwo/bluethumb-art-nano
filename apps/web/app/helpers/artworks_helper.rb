@@ -126,4 +126,13 @@ module ArtworksHelper
       "Browse Artworks"
     end
   end
+
+  # Props handed to the ColourPicker island. Rails owns the URL; the island
+  # never hardcodes a route or talks to the palette service directly.
+  def colour_picker_props(artwork)
+    {
+      swatches: artwork.palette_swatches,
+      endpoint: artwork_colour_matches_path(artwork.slug)
+    }
+  end
 end
