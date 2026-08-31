@@ -1,0 +1,35 @@
+---
+description: Rails web app conventions for apps/web
+globs: apps/web/**/*
+alwaysApply: false
+---
+
+# Rails web (`apps/web`)
+
+## Rendering
+
+- **SSR first** on `/artworks`: artwork tiles, result count, active facets, pagination in initial HTML
+- Turbo Frame for facet changes, cart add, inline updates — not full page SPA navigation
+- Stimulus for small DOM behaviour; Vue for rich widgets (mount into a div, props from data attributes)
+
+## Controllers & views
+
+- Thin controllers; query objects or model scopes for facet filtering
+- Slim templates; partials for artwork tiles and facet chips
+- Facet state driven by URL path segments, e.g. `/artworks/style/abstract/price/500-1000`
+
+## Models
+
+```ruby
+# Facet scopes — chainable, URL-param driven
+Artwork.by_style("abstract").by_price_range(500..1000).available
+```
+
+- `palette_data` jsonb on Artwork — do not compute palettes here; delegate to palette service
+- Slugs for artists and artworks; indexed columns for facet filters
+
+## Avoid
+
+- Client-only listing pages with empty server HTML
+- Fat models with colour math or image processing
+- React/Vue for entire pages — islands only

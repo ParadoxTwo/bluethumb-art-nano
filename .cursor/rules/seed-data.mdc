@@ -1,0 +1,34 @@
+---
+description: Procedural seed data and artwork generation rules
+globs: "**/{seeds,lib/tasks}/**/*"
+alwaysApply: false
+---
+
+# Seed data & artwork generation
+
+## Hard rules
+
+- **Never** download or copy images from bluethumb.com.au or any real artist
+- **Never** use real artist names from the live site
+- All catalogue data must be reproducible (store random seeds in metadata)
+
+## Generation approach
+
+- 50–100 synthetic artists with plausible AU locations
+- 500–1000 artworks via libvips: noise fields, gradients, geometric shapes
+- Constrain palettes so `vibrant_palette` extracts varied swatches
+- Controlled vocab for `medium` and `style` matching facet filters
+- Price range: $200–$8000 AUD (`price_cents`)
+
+## Tasks
+
+```bash
+bin/rails artworks:regenerate COUNT=500
+bin/rails palettes:extract   # delegates to Hanami or inline job
+```
+
+## Images
+
+- Store under `apps/web/storage/` or ActiveStorage
+- Reasonable dimensions (e.g. 800×800 – 1600×1200) for grid display
+- Visually distinct enough for colour search demos to produce meaningful results

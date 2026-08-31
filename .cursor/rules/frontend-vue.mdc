@@ -1,0 +1,33 @@
+---
+description: Vue 3 islands and frontend conventions
+globs: apps/web/app/javascript/**/*
+alwaysApply: false
+---
+
+# Frontend — Vue 3 islands
+
+## When to use Vue vs Hotwire
+
+| Vue                             | Hotwire                       |
+| ------------------------------- | ----------------------------- |
+| Colour picker with live preview | Facet chip toggle, pagination |
+| Room photo upload + results     | Add to cart, flash messages   |
+| Multi-step interactive filter   | Lazy-loaded turbo frame       |
+
+## Vue 3 conventions
+
+- Composition API (`<script setup>`) — not Options API unless maintaining existing code
+- Mount: `createApp(Component).mount('#colour-picker')`
+- Props from Rails via `data-*` attributes on the mount element
+- Fetch palette API at `/palette/...` (Hanami); handle loading and error states
+- Keep islands self-contained; no global Vue app wrapping the page
+
+## Styling
+
+- Tailwind utility classes in Vue templates
+- Match server-rendered tile/card markup for consistency
+
+## Avoid
+
+- SPA router, Pinia store for app-wide state (not needed at this scale)
+- Fetching catalogue data client-side when SSR already rendered it

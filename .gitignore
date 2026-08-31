@@ -1,0 +1,57 @@
+# Environment
+.env*
+!.env.example
+
+# Dependencies
+node_modules/
+vendor/bundle/
+
+# Logs & temp
+log/
+tmp/
+!tmp/.keep
+
+# Storage
+storage/
+
+# Rails credentials
+config/master.key
+apps/web/config/master.key
+
+# Build artifacts
+public/assets/
+public/vite/
+apps/web/public/assets/
+apps/web/public/vite/
+apps/web/tmp/
+apps/web/log/
+apps/web/storage/
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Cursor — keep project rules, ignore local IDE state
+.cursor/*
+!.cursor/rules/
+
+# Procfile.dev / overmind
+.overmind.sock
+
+# Ruby tooling
+.ruby-lsp/
+byebug_history
+
+# Large local media
+*.mp4
+*.mov
+
+# Test artifacts
+coverage/
+spec/examples.txt
+
+# Hanami
+apps/palette/tmp/
+apps/palette/log/

@@ -1,0 +1,32 @@
+---
+description: Core project identity, phases, and constraints for Bluethumb Art Nano
+alwaysApply: true
+---
+
+# Project core
+
+Monorepo: `apps/web` (Rails 8) + `apps/palette` (Hanami 2). Match Bluethumb's hybrid stack — not a React SPA.
+
+## Start here
+
+1. `README.md` — public engineering overview
+2. `tmp/PROJECT_CONTEXT.md` — phases, scope, interview context (gitignored)
+3. `AGENTS.md` — agent workflow
+
+## Current phases
+
+- **Phase 0**: Marketplace shell — models, SSR faceted browse, detail pages, Vue island, Hotwire frames
+- **Phase 1**: Colour search via `vibrant_palette` in Hanami — similar artworks, room match
+
+Stay in the active phase. Do not gold-plate out-of-scope features (payments, inbox, OAuth, ES).
+
+## Constraints
+
+- Synthetic/procedural artwork only — no scraped images or real artist data
+- Public README and committed docs: engineering only, no job-search content
+- Specs from the first commit; green before moving on
+- Minimize diff scope — match existing conventions once scaffold exists
+
+## Commit style
+
+Small, logical commits. Message explains _why_, not just what. Refactors keep specs green at each step.

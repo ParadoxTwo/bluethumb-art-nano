@@ -1,0 +1,25 @@
+- content_for :title, @artist.name
+
+.max-w-5xl.mx-auto
+  .flex.flex-col.sm:flex-row.sm:items-start.gap-6.mb-10
+    .shrink-0.w-20.h-20.rounded-full.bg-gradient-to-br.from-stone-700.to-stone-900.flex.items-center.justify-center.text-white.text-2xl.font-semibold aria-hidden="true"
+      = artist_initials(@artist.name)
+    div
+      h1.text-3xl.font-semibold = @artist.name
+      - if @artist.location.present?
+        p.meta-text.mt-1 = @artist.location
+      .flex.flex-wrap.gap-4.mt-4
+        span.chip = pluralize(@artworks.size, "artwork")
+        - if @artist.location.present?
+          span.chip = @artist.location
+
+  - if @artist.bio.present?
+    .card.p-6.mb-10
+      h2.text-sm.font-semibold.uppercase.tracking-wide.text-stone-500.mb-3 About
+      p.text-stone-700.leading-relaxed = @artist.bio
+
+  section
+    h2.text-xl.font-semibold.mb-6 Artworks
+    .grid.grid-cols-2.md:grid-cols-3.xl:grid-cols-4.gap-4
+      - @artworks.each do |artwork|
+        = render "artworks/tile", artwork: artwork

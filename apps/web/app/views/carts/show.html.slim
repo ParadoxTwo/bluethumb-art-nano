@@ -1,0 +1,67 @@
+- content_for :title, "Your cart"
+
+= render "shared/page_header", title: "Your cart"
+
+- if @cart_items.any?
+  div class="grid lg:grid-cols-[1fr_320px] gap-8 items-start"
+    .space-y-4
+      - @cart_items.each do |item|
+        .card.p-4.flex.gap-4.items-start
+          = link_to artwork_path(item.artwork), class: "shrink-0 w-28 aspect-[4/5] overflow-hidden rounded-lg bg-stone-200" do
+            = artwork_image_tag item.artwork, class: "h-full w-full object-cover", alt: item.artwork.title
+          .flex-1.min-w-0
+            h2.text-sm.font-medium
+              = link_to item.artwork.title, artwork_path(item.artwork), class: "hover:text-accent"
+              - if item.quantity > 1
+                span.text-stone-600.ml-1 × #{item.quantity}
+            p.meta-text = item.artwork.artist.name
+            - if item.quantity > 1
+              p.text-xs.text-stone-600.mt-1 = "#{format_price(item.artwork.price_cents)} × #{item.quantity}"
+            - if item.framing?
+              p.text-xs.text-stone-600.mt-1
+                | Framing (#{item.framing_option.titleize}): +#{format_price(Artwork::FRAMING_PRICE_CENTS)}
+                - if item.quantity > 1
+                  |  × #{item.quantity}
+          .text-right.shrink-0
+            p.text-sm.font-semibold = format_price(item.line_total_cents)
+            = button_to "Remove", cart_item_path(item), method: :delete, class: "text-xs text-red-700 hover:text-red-900 mt-2 underline"
+
+    aside.card.p-6.lg:sticky.lg:top-24
+      h2.text-lg.font-semibold.mb-4 Order summary
+      ul.space-y-3.mb-4.text-sm
+        - @cart_items.each do |item|
+          li.space-y-1
+            div class="flex justify-between gap-4"
+              span.font-medium
+                = item.artwork.title
+                - if item.quantity > 1
+                  span.text-stone-600.font-normal.ml-1 × #{item.quantity}
+              span = format_price(item.artwork.price_cents * item.quantity)
+            - if item.framing?
+              div class="flex justify-between gap-4 text-stone-600"
+                span Framing (#{item.framing_option.titleize})
+                span
+                  | +#{format_price(Artwork::FRAMING_PRICE_CENTS)}
+                  - if item.quantity > 1
+                    |  × #{item.quantity}
+      dl.space-y-2.text-sm.border-t.border-stone-200.pt-4
+        div class="flex justify-between"
+          dt Subtotal
+          dd = format_price(current_cart.subtotal_cents)
+        - if current_cart.framing_total_cents.positive?
+          div class="flex justify-between"
+            dt Framing
+            dd = format_price(current_cart.framing_total_cents)
+        div class="flex justify-between font-semibold text-base pt-3 border-t border-stone-200"
+          dt Total
+          dd = format_price(current_cart.total_cents)
+      .mt-6.space-y-3
+        = link_to "Continue shopping", artworks_path, class: "block text-center text-sm text-stone-600 hover:text-stone-900"
+        = link_to "Checkout", checkout_path, class: "btn-primary w-full text-center"
+- else
+  .card.p-12.text-center.max-w-md.mx-auto
+    svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" class="w-16 h-16 mx-auto text-stone-300 mb-4" aria-hidden="true"
+      path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
+    p.text-stone-600.mb-2 Your cart is empty.
+    p.meta-text.mb-6 Discover original art from Australian artists.
+    = link_to "Browse artworks", artworks_path, class: "btn-primary"

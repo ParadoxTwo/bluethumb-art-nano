@@ -1,0 +1,37 @@
+---
+description: RSpec testing standards — specs from first commit
+globs: "**/*_spec.rb"
+alwaysApply: false
+---
+
+# RSpec standards
+
+## Required coverage
+
+- Model scopes and validations (facet filters, slug generation)
+- Service objects and Hanami actions (happy path + failure path)
+- Colour distance/ranking logic with fixed fixture palettes
+- Request specs for SSR listing (assert artwork tiles in response body without JS)
+
+## Style
+
+```ruby
+# ✅ Explicit, one assertion per behaviour
+it "filters by style from URL segment" do
+  abstract = create(:artwork, style: "abstract")
+  create(:artwork, style: "landscape")
+
+  get "/artworks/style/abstract"
+
+  expect(response.body).to include(abstract.title)
+  expect(response.body).not_to include("landscape")
+end
+```
+
+- FactoryBot for fixtures; avoid brittle full-page string matches when id/class selectors suffice
+- Stub external HTTP (palette service) in Rails specs; real DB in Hanami specs
+- Regression specs for bugs with a comment explaining _why_
+
+## Before finishing a task
+
+Run affected specs. Do not leave failing or untested orchestrator logic.

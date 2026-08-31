@@ -1,0 +1,46 @@
+- content_for :title, "Style quiz"
+- @step_label = { 1 => "Choose a style", 2 => "Set your budget", 3 => "Pick a size (optional)" }[@step]
+
+.max-w-2xl.mx-auto
+  .card.p-8
+    .mb-8
+      .flex.items-center.justify-between.mb-3
+        p.text-sm.font-medium.text-stone-500 Step #{@step} of 3
+        p.text-sm.text-stone-500 = "#{((@step.to_f / 3) * 100).round}%"
+      .h-1.5.bg-stone-200.rounded-full.overflow-hidden
+        .h-full.bg-stone-900.rounded-full.transition-all style="width: #{(@step.to_f / 3 * 100).round}%"
+      h1.text-2xl.font-semibold.mt-6 = @step_label
+
+    = form_with url: discover_path, method: :patch do
+      input type="hidden" name="step" value=@step
+
+      - if @step == 1
+        div class="grid grid-cols-2 sm:grid-cols-3 gap-3"
+          - Artwork::STYLES.each do |style|
+            label.block.cursor-pointer
+              input type="radio" name="style" value=style required=true class="peer sr-only"
+              span class="block rounded-xl border-2 border-stone-200 overflow-hidden peer-checked:border-stone-900 peer-checked:ring-2 peer-checked:ring-stone-900 peer-checked:ring-offset-2 transition-all"
+                div class="aspect-[4/3] bg-gradient-to-br #{style_accent_class(style)} flex items-end p-3"
+                  span.text-white.font-semibold.text-sm = style.titleize
+
+      - elsif @step == 2
+        div class="grid grid-cols-1 sm:grid-cols-2 gap-3"
+          - ArtworksHelper::PRICE_RANGES.each do |label, range|
+            label.block.cursor-pointer
+              input type="radio" name="price" value=range required=true class="peer sr-only"
+              span class="block rounded-xl border-2 border-stone-200 p-4 text-center peer-checked:border-stone-900 peer-checked:bg-stone-50 peer-checked:ring-2 peer-checked:ring-stone-900 peer-checked:ring-offset-2 font-medium transition-all"
+                = label
+
+      - elsif @step == 3
+        p.text-sm.text-stone-600.mb-4 Skip by clicking Continue without selecting a size.
+        div class="grid grid-cols-1 gap-3"
+          - ArtworksHelper::SIZE_BANDS.each do |label, band|
+            label.block.cursor-pointer
+              input type="radio" name="size" value=band class="peer sr-only"
+              span class="block rounded-xl border-2 border-stone-200 p-4 peer-checked:border-stone-900 peer-checked:bg-stone-50 peer-checked:ring-2 peer-checked:ring-stone-900 peer-checked:ring-offset-2 transition-all"
+                = label
+
+      .mt-8.flex.gap-4
+        - if @step > 1
+          = link_to "Back", discover_path(step: @step - 1), class: "btn-secondary"
+        = submit_tag (@step < 3 ? "Continue" : "See results"), class: "btn-primary cursor-pointer"

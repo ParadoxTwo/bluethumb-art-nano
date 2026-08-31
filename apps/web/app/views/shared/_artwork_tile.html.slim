@@ -1,0 +1,11 @@
+= link_to artwork_path(artwork), class: "group block card-hover" do
+  .relative
+    div class="aspect-[4/5] overflow-hidden rounded-xl bg-stone-200"
+      = artwork_image_tag artwork, class: "h-full w-full object-cover group-hover:scale-105 transition-transform duration-300", alt: artwork.title
+    - unless artwork.available?
+      .absolute.inset-0.flex.items-center.justify-center.bg-stone-900/50.rounded-xl
+        span.text-white.text-sm.font-semibold.tracking-wide Sold
+  .mt-3.px-0.5
+    h2.text-sm.font-medium.text-stone-900.truncate.group-hover:text-accent = artwork.title
+    p.meta-text.mt-0.5 = artwork.artist.name
+    p.text-sm.font-semibold.text-stone-900.mt-1 = format_price(artwork.price_cents)

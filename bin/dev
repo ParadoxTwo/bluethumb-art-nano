@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+if command -v rbenv >/dev/null 2>&1; then
+  eval "$(rbenv init - bash)"
+  rbenv shell "$(cat .ruby-version)" 2>/dev/null || true
+fi
+
+export PALETTE_SERVICE_URL="${PALETTE_SERVICE_URL:-http://localhost:9292}"
+
+if command -v foreman >/dev/null 2>&1; then
+  exec foreman start -f Procfile.dev "$@"
+else
+  exec bundle exec foreman start -f Procfile.dev "$@"
+fi

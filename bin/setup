@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+if command -v rbenv >/dev/null 2>&1; then
+  eval "$(rbenv init - bash)"
+  rbenv shell "$(cat .ruby-version)" 2>/dev/null || true
+fi
+
+echo "==> Installing web dependencies"
+(cd apps/web && bundle install)
+
+echo "==> Installing palette dependencies"
+(cd apps/palette && bundle install)
+
+if [ ! -f .env ] && [ -f .env.example ]; then
+  cp .env.example .env
+  echo "==> Created .env from .env.example"
+fi
+
+echo "==> Setting up database"
+(cd apps/web && bundle exec rails db:prepare)
+
+echo "==> Seeding catalogue"
+(cd apps/web && bundle exec rails db:seed)
+
+echo ""
+echo "Setup complete. Run bin/dev to start servers."

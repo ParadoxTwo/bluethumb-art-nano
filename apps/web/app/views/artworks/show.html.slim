@@ -1,0 +1,92 @@
+- content_for :title, @artwork.title
+
+nav.text-sm.text-stone-600.mb-6 aria-label="Breadcrumb"
+  = link_to "Home", root_path, class: "hover:underline"
+  span.mx-1 /
+  = link_to "Artworks", artworks_path, class: "hover:underline"
+  span.mx-1 /
+  span.text-stone-900 = @artwork.title
+
+.max-w-6xl.mx-auto
+  div class="grid lg:grid-cols-[1fr_380px] gap-10"
+    div data-controller="gallery"
+      - main_src = @artwork.image.attached? ? url_for(@artwork.image) : nil
+      div class="aspect-[4/5] rounded-xl overflow-hidden bg-stone-200 mb-3"
+        - if main_src
+          img data-gallery-target="main" src=main_src alt=@artwork.title class="h-full w-full object-cover"
+        - else
+          = artwork_image_tag @artwork, class: "h-full w-full object-cover", alt: @artwork.title
+      - if @artwork.gallery_images.attached?
+        div class="grid grid-cols-4 gap-2"
+          - if main_src
+            button type="button" class="aspect-square rounded-lg overflow-hidden ring-2 ring-stone-900 ring-offset-1" data-gallery-target="thumb" data-action="gallery#select" data-full-src=main_src
+              = image_tag @artwork.image, class: "h-full w-full object-cover", alt: ""
+          - @artwork.gallery_images.each do |gallery_image|
+            - thumb_src = url_for(gallery_image)
+            button type="button" class="aspect-square rounded-lg overflow-hidden hover:ring-2 hover:ring-stone-400 hover:ring-offset-1 transition-shadow" data-gallery-target="thumb" data-action="gallery#select" data-full-src=thumb_src
+              = image_tag gallery_image, class: "h-full w-full object-cover", alt: ""
+
+    div.lg:sticky.lg:top-24.lg:self-start
+      h1.text-3xl.font-semibold.text-stone-900 = @artwork.title
+      p.mt-2.text-stone-600
+        | by
+        = link_to @artwork.artist.name, artist_path(@artwork.artist), class: "ml-1 text-stone-900 font-medium hover:text-accent"
+      p.meta-text.mt-1 = @artwork.artist.location
+      p.mt-5.text-3xl.font-semibold.text-stone-900 = format_price(@artwork.price_cents)
+
+      .mt-4.flex.flex-wrap.gap-2
+        - if favourite_artwork_ids?(@artwork.id)
+          = button_to "Saved", favourite_path(artwork_id: @artwork.id), method: :delete, class: "btn-secondary text-sm px-3 py-1.5"
+        - else
+          = button_to "Save", favourites_path, method: :post, params: { artwork_id: @artwork.id }, class: "btn-secondary text-sm px-3 py-1.5"
+
+      dl.mt-6.space-y-3.text-sm.card.p-4
+        div class="flex justify-between gap-4"
+          dt.font-medium.text-stone-700 Medium
+          dd.text-stone-600 = @artwork.medium.titleize
+        div class="flex justify-between gap-4"
+          dt.font-medium.text-stone-700 Style
+          dd.text-stone-600 = @artwork.style.titleize
+        div class="flex justify-between gap-4"
+          dt.font-medium.text-stone-700 Dimensions
+          dd.text-stone-600 = @artwork.dimensions_label
+        - if @artwork.weight_kg
+          div class="flex justify-between gap-4"
+            dt.font-medium.text-stone-700 Weight
+            dd.text-stone-600 = "#{@artwork.weight_kg} kg"
+
+      p.meta-text.mt-4
+        | Arrives in 5–14 business days (estimate).
+
+      .mt-5
+        = render "shared/trust_badges"
+
+      - if @artwork.available?
+        = form_with url: cart_items_path, method: :post, class: "mt-8 space-y-4" do
+          = hidden_field_tag :artwork_id, @artwork.id
+          fieldset
+            legend.text-sm.font-medium.mb-3 Framing (optional, +#{format_price(Artwork::FRAMING_PRICE_CENTS)})
+            .flex.flex-wrap.gap-2
+              - Artwork::FRAMING_OPTIONS.each do |option|
+                - selected = @cart_item&.framing_option == option
+                label class="text-sm px-3 py-1.5 rounded-lg border transition-colors cursor-pointer has-[:checked]:border-stone-900 has-[:checked]:bg-stone-900 has-[:checked]:text-white border-stone-300 hover:bg-stone-50"
+                  = radio_button_tag :framing_option, option, selected, class: "sr-only"
+                  = option.titleize
+
+          = submit_tag "Add to cart", class: "btn-primary w-full"
+      - else
+        p.mt-8.text-stone-500.font-medium This artwork has sold.
+
+  - if @related_artworks.any?
+    section.mt-16
+      h2.text-xl.font-semibold.mb-6 More #{@artwork.style} works
+      div class="grid grid-cols-2 md:grid-cols-4 gap-4"
+        - @related_artworks.each do |artwork|
+          = render "tile", artwork: artwork
+
+  - if @similar_by_colour.any?
+    section.mt-16
+      h2.text-xl.font-semibold.mb-6 More like this, by colour
+      div class="grid grid-cols-2 md:grid-cols-3 gap-4"
+        - @similar_by_colour.each do |artwork|
+          = render "tile", artwork: artwork

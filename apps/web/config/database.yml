@@ -1,0 +1,27 @@
+# PostgreSQL. Versions 9.5 and up are supported.
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+
+development:
+  <<: *default
+  <% if ENV["DATABASE_URL"].present? %>
+  url: <%= ENV["DATABASE_URL"] %>
+  <% else %>
+  database: bluethumb_art_nano_development
+  <% end %>
+
+test:
+  <<: *default
+  database: bluethumb_art_nano_test
+
+production:
+  <<: *default
+  <% if ENV["DATABASE_URL"].present? %>
+  url: <%= ENV["DATABASE_URL"] %>
+  <% else %>
+  database: bluethumb_art_nano_production
+  username: web
+  password: <%= ENV["WEB_DATABASE_PASSWORD"] %>
+  <% end %>

@@ -1,0 +1,8 @@
+- content_for :title, browse_page_title(@facets)
+
+div class="lg:grid lg:grid-cols-[240px_1fr] gap-8"
+  aside
+    = render "sidebar", facets: @facets
+
+  section
+    = render "results_frame", artworks: @artworks, pagy: @pagy, total_count: @total_count, facets: @facets, sort: @sort

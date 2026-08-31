@@ -1,0 +1,15 @@
+- size ||= :md
+- size_class = size == :sm ? "text-xs px-2.5 py-1" : "text-xs px-3 py-1.5"
+.flex.flex-wrap.gap-2 aria-label="Purchase guarantees"
+  span class="#{size_class} inline-flex items-center gap-1.5 rounded-full bg-stone-100 text-stone-700 font-medium"
+    svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5 text-stone-500" aria-hidden="true"
+      path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd"
+    | Free shipping
+  span class="#{size_class} inline-flex items-center gap-1.5 rounded-full bg-stone-100 text-stone-700 font-medium"
+    svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5 text-stone-500" aria-hidden="true"
+      path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466A5.5 5.5 0 1117.5 7.5a5.5 5.5 0 01-2.188 3.924zM10 3a4 4 0 100 8 4 4 0 000-8z" clip-rule="evenodd"
+    | 7-day returns
+  span class="#{size_class} inline-flex items-center gap-1.5 rounded-full bg-stone-100 text-stone-700 font-medium"
+    svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5 text-stone-500" aria-hidden="true"
+      path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"
+    | Insured delivery

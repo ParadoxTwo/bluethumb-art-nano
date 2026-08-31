@@ -1,0 +1,63 @@
+- content_for :title, "Checkout"
+
+= render "shared/page_header", title: "Checkout", meta: "Demo checkout — no payment collected."
+
+div class="grid lg:grid-cols-[1fr_360px] gap-8 items-start"
+  = form_with url: checkout_path, method: :post, class: "space-y-6" do
+    section.card.p-6
+      h2.text-lg.font-semibold.mb-4 Contact
+      .space-y-4
+        div
+          label.block.text-sm.font-medium.mb-1 for="contact_name" Name
+          input#contact_name.input-field type="text" name="contact_name" required=true
+        div
+          label.block.text-sm.font-medium.mb-1 for="contact_email" Email
+          input#contact_email.input-field type="email" name="contact_email" required=true
+
+    section.card.p-6
+      h2.text-lg.font-semibold.mb-4 Delivery address
+      .space-y-4
+        div
+          label.block.text-sm.font-medium.mb-1 for="address_line1" Street address
+          input#address_line1.input-field type="text" name="address_line1" required=true
+        div class="grid sm:grid-cols-3 gap-4"
+          div
+            label.block.text-sm.font-medium.mb-1 for="address_city" City
+            input#address_city.input-field type="text" name="address_city" required=true
+          div
+            label.block.text-sm.font-medium.mb-1 for="address_state" State
+            input#address_state.input-field type="text" name="address_state" required=true
+          div
+            label.block.text-sm.font-medium.mb-1 for="address_postcode" Postcode
+            input#address_postcode.input-field type="text" name="address_postcode" required=true
+
+    section.card.p-6
+      h2.text-lg.font-semibold.mb-4 Promo code
+      p.text-xs.text-stone-500.mb-2 Optional — not validated in this demo.
+      input.input-field type="text" name="promo_code" placeholder="Enter code"
+
+    = submit_tag "Place order", class: "btn-primary w-full cursor-pointer"
+
+  aside.space-y-4.lg:sticky.lg:top-24
+    .card.p-6
+      h2.text-lg.font-semibold.mb-4 Order summary
+      ul.space-y-3.mb-4
+        - @cart_items.each do |item|
+          li.text-sm
+            span.font-medium = item.artwork.title
+            span.text-stone-600.ml-1 × #{item.quantity}
+            - if item.framing?
+              p.text-xs.text-stone-500 + framing (#{item.framing_option.titleize})
+      dl.space-y-2.text-sm.border-t.border-stone-200.pt-4
+        div class="flex justify-between"
+          dt Subtotal
+          dd = format_price(current_cart.subtotal_cents)
+        - if current_cart.framing_total_cents.positive?
+          div class="flex justify-between"
+            dt Framing
+            dd = format_price(current_cart.framing_total_cents)
+        div class="flex justify-between font-semibold"
+          dt Total
+          dd = format_price(current_cart.total_cents)
+      p.text-xs.text-stone-500.mt-4 No payment collected — demo checkout only.
+    = render "shared/trust_badges"

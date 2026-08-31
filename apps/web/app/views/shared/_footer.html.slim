@@ -1,0 +1,19 @@
+footer.bg-white.border-t.border-stone-200.mt-auto
+  .max-w-7xl.mx-auto.px-4.py-10
+    .grid.grid-cols-1.md:grid-cols-3.gap-8.mb-8
+      div
+        p.text-sm.font-semibold.text-stone-900.mb-3 Shop
+        ul.space-y-2.text-sm
+          li = link_to "Browse artworks", artworks_path, class: "text-stone-600 hover:text-stone-900"
+          li = link_to "Style quiz", discover_path, class: "text-stone-600 hover:text-stone-900"
+          li = link_to "Your cart", cart_path, class: "text-stone-600 hover:text-stone-900"
+      div
+        p.text-sm.font-semibold.text-stone-900.mb-3 About
+        p.text-sm.text-stone-600
+          | Bluethumb Art Nano is a demo marketplace showcasing server-rendered browse, faceted search, and colour-aware discovery.
+      div
+        p.text-sm.font-semibold.text-stone-900.mb-3 Buyer confidence
+        = render "shared/trust_badges", size: :sm
+    .border-t.border-stone-200.pt-6.flex.flex-wrap.items-center.justify-between.gap-4
+      p.text-xs.text-stone-500 © #{Time.current.year} Bluethumb Art Nano — engineering demo
+      p.text-xs.text-stone-500 Original Australian art, procedurally generated for this prototype.

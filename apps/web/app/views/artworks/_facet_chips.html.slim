@@ -1,0 +1,8 @@
+- if facets.any?
+  .mb-4.flex.flex-wrap.items-center.gap-2 aria-label="Active filters"
+    span.text-xs.font-medium.text-stone-500.mr-1 Filters:
+    - active_facet_entries(facets).each do |entry|
+      = link_to artworks_browse_path(facet_remove(facets, entry[:key])), class: "chip-removable hover:bg-stone-800 transition-colors", data: { turbo_frame: "artworks_results" }, aria: { label: "Remove #{entry[:label]} filter" } do
+        span = entry[:label]
+        span aria-hidden="true" class="ml-0.5 text-stone-300 hover:text-white" ×
+    = link_to "Clear all", artworks_path, class: "text-xs text-stone-600 hover:text-stone-900 underline ml-1", data: { turbo_frame: "artworks_results" }

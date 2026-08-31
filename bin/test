@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+if command -v rbenv >/dev/null 2>&1; then
+  eval "$(rbenv init - bash)"
+  rbenv shell "$(cat .ruby-version)" 2>/dev/null || true
+fi
+
+status=0
+
+if [[ -f "$ROOT/.env" ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "$ROOT/.env"
+  set +a
+fi
+
+echo "==> Running web specs"
+(
+  cd apps/web
+  if [[ -n "${DATABASE_URL:-}" ]]; then
+    export DATABASE_URL="${DATABASE_URL/bluethumb_art_nano_development/bluethumb_art_nano_test}"
+  else
+    unset DATABASE_URL
+  fi
+  export RAILS_ENV=test
+  bundle exec rails db:environment:set RAILS_ENV=test 2>/dev/null || true
+  bundle exec rails db:test:prepare
+  bundle exec rspec
+) || status=1
+
+echo "==> Running palette specs"
+(cd apps/palette && bundle exec rspec) || status=1
+
+exit $status

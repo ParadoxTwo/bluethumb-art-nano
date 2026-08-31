@@ -1,0 +1,29 @@
+= turbo_frame_tag "artworks_results" do
+  .mb-6.flex.flex-wrap.items-end.justify-between.gap-4
+    div
+      h1.text-2xl.font-semibold.text-stone-900 Artworks
+      p.meta-text.mt-1
+        span.font-medium.text-stone-700 = total_count
+        |  #{'result'.pluralize(total_count)}
+        - if facets["q"].present?
+          span.ml-1 for "#{facets["q"]}"
+    nav aria-label="Sort options"
+      .inline-flex.flex-wrap.items-center.gap-1.p-1.bg-stone-100.rounded-lg
+        - ArtworksHelper::SORT_OPTIONS.each do |label, value|
+          = link_to label, artworks_browse_path(facets.merge("sort" => value)), class: sort_link_class(facets, value), data: { turbo_frame: "artworks_results" }
+
+  = render "facet_chips", facets: facets
+
+  - if artworks.any?
+    div class="columns-2 md:columns-3 xl:columns-4 gap-4 space-y-4"
+      - artworks.each do |artwork|
+        .break-inside-avoid
+          = render "tile", artwork: artwork
+  - else
+    .card.p-8.text-center
+      p.text-stone-600 No artworks match these filters.
+      = link_to "Clear filters", artworks_path, class: "inline-block mt-4 btn-secondary text-sm"
+
+  - if pagy.pages > 1
+    .mt-8
+      == pagy.series_nav

@@ -1,0 +1,12 @@
+- if flash[:notice] || flash[:alert]
+  #flash-messages.space-y-2.mb-6
+    - if flash[:notice]
+      .flex.items-start.justify-between.gap-3.text-sm.text-green-900.bg-green-50.border.border-green-200.rounded-lg.px-4.py-3 role="status" data-controller="flash" data-turbo-temporary=""
+        span.flex-1 = flash[:notice]
+        button type="button" class="shrink-0 text-green-700 hover:text-green-900" aria-label="Dismiss" data-action="flash#dismiss"
+          | ×
+    - if flash[:alert]
+      .flex.items-start.justify-between.gap-3.text-sm.text-red-900.bg-red-50.border.border-red-200.rounded-lg.px-4.py-3 role="alert" data-controller="flash" data-turbo-temporary=""
+        span.flex-1 = flash[:alert]
+        button type="button" class="shrink-0 text-red-700 hover:text-red-900" aria-label="Dismiss" data-action="flash#dismiss"
+          | ×

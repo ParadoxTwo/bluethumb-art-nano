@@ -1,0 +1,16 @@
+- content_for :title, "Thank you"
+
+.max-w-lg.mx-auto
+  .card.p-10.text-center
+    .inline-flex.items-center.justify-center.w-16.h-16.rounded-full.bg-green-100.text-green-700.mb-6
+      svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8" aria-hidden="true"
+        path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"
+    h1.text-3xl.font-semibold Thank you for your order
+    - if @order
+      p.mt-4.text-stone-600
+        | We've received your order for #{@order["item_count"]} #{"item".pluralize(@order["item_count"])}.
+        |  A confirmation would be sent to #{@order["contact_email"]} in a live marketplace.
+      p.meta-text.mt-2 Order total: #{format_price(@order["total_cents"])}
+    .mt-8.flex.flex-wrap.justify-center.gap-4
+      = link_to "Continue shopping", artworks_path, class: "btn-primary"
+      = link_to "Back to home", root_path, class: "btn-secondary"

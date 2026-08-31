@@ -1,0 +1,27 @@
+- content_for :title, "Home"
+
+section.mb-16.rounded-2xl.bg-gradient-to-br.from-stone-900.via-stone-800.to-stone-700.text-white.px-8.py-20.relative.overflow-hidden
+  .absolute.inset-0.opacity-30.bg-gradient-to-tr.from-accent/20.to-transparent.pointer-events-none
+  .relative.max-w-2xl
+    h1.text-4xl.md:text-5xl.font-semibold.tracking-tight.leading-tight Find art you'll love
+    p.mt-5.text-stone-300.text-lg.max-w-lg Browse original works from Australian artists — or take our style quiz to discover pieces matched to your taste.
+    .mt-10.flex.flex-wrap.gap-4
+      = link_to "Take the style quiz", discover_path, class: "btn-primary bg-white text-stone-900 hover:bg-stone-100 focus:ring-white"
+      = link_to "Browse all artworks", artworks_path, class: "btn-secondary border-white/30 text-white hover:bg-white/10 hover:border-white/50"
+
+section.mb-16
+  .flex.items-end.justify-between.mb-6
+    h2.text-2xl.font-semibold Staff picks
+    = link_to "View all", artworks_path, class: "text-sm text-stone-600 hover:text-stone-900 font-medium"
+  div class="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4"
+    - @staff_picks.each do |artwork|
+      .break-inside-avoid
+        = render "artworks/tile", artwork: artwork
+
+section
+  h2.text-2xl.font-semibold.mb-6 Shop by style
+  div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4"
+    - Artwork::STYLES.each do |style|
+      = link_to artworks_browse_path("style" => style), class: "group block rounded-xl overflow-hidden card-hover shadow-[var(--shadow-card)]" do
+        div class="aspect-[4/3] bg-gradient-to-br #{style_accent_class(style)} flex items-end p-4"
+          span.text-white.font-semibold.text-sm.drop-shadow = style.titleize

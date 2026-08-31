@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bluethumb-art-nano.local/contracts/palette_data/v1",
+  "title": "palette_data v1",
+  "type": "object",
+  "required": ["version", "extracted_at", "image_hash", "swatches", "dominant", "centroid_lab", "hue_family"],
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "extracted_at": { "type": "string", "format": "date-time" },
+    "image_hash": { "type": "string", "pattern": "^sha256:" },
+    "swatches": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["role", "hex", "rgb", "lab", "population"],
+        "properties": {
+          "role": { "type": "string", "enum": ["vibrant", "muted", "dark_vibrant", "dark_muted", "light_vibrant", "light_muted"] },
+          "hex": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+          "rgb": { "type": "array", "items": { "type": "integer" }, "minItems": 3, "maxItems": 3 },
+          "lab": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
+          "population": { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      }
+    },
+    "dominant": {
+      "type": "object",
+      "required": ["hex", "lab"],
+      "properties": {
+        "hex": { "type": "string" },
+        "lab": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 }
+      }
+    },
+    "centroid_lab": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "hue_family": {
+      "type": "string",
+      "enum": ["red", "orange", "yellow", "green", "blue", "purple", "neutral"]
+    }
+  }
+}

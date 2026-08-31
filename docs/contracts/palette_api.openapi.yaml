@@ -1,0 +1,82 @@
+openapi: 3.1.0
+info:
+  title: Bluethumb Art Nano — Palette Service API
+  version: 0.1.0
+  description: Phase 1 stub contract. Colour math lives in apps/palette only.
+servers:
+  - url: http://localhost:9292
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+  /colour/extract:
+    post:
+      summary: Extract palette for an artwork (Phase 1 stub)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [artwork_id]
+              properties:
+                artwork_id:
+                  type: integer
+                force:
+                  type: boolean
+                  default: false
+      responses:
+        "501":
+          description: Not implemented (stub)
+        "200":
+          description: Palette extracted
+  /colour/similar/{artwork_id}:
+    get:
+      summary: Similar artworks by palette (Phase 1 stub)
+      parameters:
+        - name: artwork_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Ranked similar artworks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  artworks:
+                    type: array
+                    items: { type: object }
+                  meta:
+                    type: object
+  /colour/match-room:
+    post:
+      summary: Rank artworks by room photo palette (Phase 1 stub)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        "501":
+          description: Not implemented (stub)

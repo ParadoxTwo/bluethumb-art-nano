@@ -1,0 +1,30 @@
+---
+description: Rails vs Hanami ownership and cross-app communication
+alwaysApply: true
+---
+
+# Monorepo boundaries
+
+## apps/web (Rails)
+
+- Catalogue domain: `Artist`, `Artwork`, cart, faceted browse
+- HTML via Slim; Turbo Frames/Streams for partial updates
+- Vue 3 islands only where interactivity warrants it (colour picker, room upload)
+- Calls `apps/palette` over HTTP for colour operations — do not embed palette math in Rails
+
+## apps/palette (Hanami)
+
+- Colour domain: extract, store, rank, match
+- Hanami slices with explicit actions, dry-validation contracts, injected dependencies
+- JSON API consumed by Rails and Vue islands
+- Uses `vibrant_palette` gem + libvips
+
+## Shared
+
+- One PostgreSQL database; Rails owns migrations for catalogue tables
+- `artworks.palette_data` jsonb written by palette service, read by both apps
+- Do not duplicate colour logic in both apps — single source in Hanami
+
+## Adding a feature
+
+Ask: "Is this HTML/session state or colour computation?" → routes to the correct app.

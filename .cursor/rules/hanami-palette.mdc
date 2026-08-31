@@ -1,0 +1,38 @@
+---
+description: Hanami palette service conventions for apps/palette
+globs: apps/palette/**/*
+alwaysApply: false
+---
+
+# Hanami palette service (`apps/palette`)
+
+## Structure
+
+```
+slices/colour/
+  actions/       one class per HTTP endpoint
+  contracts/     dry-validation input schemas
+  repos/         ROM or plain PG access for palette_data
+lib/
+  palette_extractor.rb   wraps vibrant_palette
+  colour_matcher.rb      CIELAB distance, ranking
+```
+
+## Patterns
+
+- Actions are small; validate with contracts before work
+- Prefer `Dry::Monads` Result for operations that can fail (missing file, corrupt image)
+- Inject dependencies — no global constants for DB or config
+- JSON responses: `{ artworks: [...], meta: { count, query_ms } }`
+
+## Colour math
+
+- Extract with `vibrant_palette` (MMCQ swatches)
+- Compare in **CIELAB**, not RGB
+- Document known failure modes: same hue ≠ visual similarity
+
+## Endpoints (Phase 1)
+
+- `POST /colour/extract` — artwork id or image upload → palette jsonb
+- `GET /colour/similar/:artwork_id` — nearest neighbours
+- `POST /colour/match-room` — photo upload → ranked artworks

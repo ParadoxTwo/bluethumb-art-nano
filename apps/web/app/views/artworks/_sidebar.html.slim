@@ -1,0 +1,53 @@
+nav class="space-y-4 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-2" aria-label="Filters"
+  div
+    h2.text-xs.font-semibold.uppercase.tracking-wide.text-stone-500.mb-2 Style
+    ul.space-y-0.5
+      - Artwork::STYLES.each do |style|
+        li
+          = link_to style.titleize, artworks_browse_path(facets.merge("style" => style)), class: facet_link_class(facets, "style", style), data: { turbo_frame: "artworks_results" }
+
+  div
+    h2.text-xs.font-semibold.uppercase.tracking-wide.text-stone-500.mb-2 Price
+    ul.space-y-0.5
+      - ArtworksHelper::PRICE_RANGES.each do |label, range|
+        li
+          = link_to label, artworks_browse_path(facets.merge("price" => range)), class: facet_link_class(facets, "price", range), data: { turbo_frame: "artworks_results" }
+
+  details.group
+    summary.text-xs.font-semibold.uppercase.tracking-wide.text-stone-500.mb-2.cursor-pointer.list-none.flex.items-center.justify-between.py-1.hover:text-stone-700
+      | Medium
+      span.text-stone-400.group-open:rotate-180.transition-transform aria-hidden="true" ▾
+    ul.space-y-0.5.mt-1
+      - Artwork::MEDIUMS.each do |medium|
+        li
+          = link_to medium.titleize, artworks_browse_path(facets.merge("medium" => medium)), class: facet_link_class(facets, "medium", medium), data: { turbo_frame: "artworks_results" }
+
+  details.group
+    summary.text-xs.font-semibold.uppercase.tracking-wide.text-stone-500.mb-2.cursor-pointer.list-none.flex.items-center.justify-between.py-1.hover:text-stone-700
+      | Size
+      span.text-stone-400.group-open:rotate-180.transition-transform aria-hidden="true" ▾
+    ul.space-y-0.5.mt-1
+      - ArtworksHelper::SIZE_BANDS.each do |label, band|
+        li
+          = link_to label, artworks_browse_path(facets.merge("size" => band)), class: facet_link_class(facets, "size", band), data: { turbo_frame: "artworks_results" }
+
+  details.group
+    summary.text-xs.font-semibold.uppercase.tracking-wide.text-stone-500.mb-2.cursor-pointer.list-none.flex.items-center.justify-between.py-1.hover:text-stone-700
+      | Orientation
+      span.text-stone-400.group-open:rotate-180.transition-transform aria-hidden="true" ▾
+    ul.space-y-0.5.mt-1
+      - Artwork::ORIENTATIONS.each do |orientation|
+        li
+          = link_to orientation.titleize, artworks_browse_path(facets.merge("orientation" => orientation)), class: facet_link_class(facets, "orientation", orientation), data: { turbo_frame: "artworks_results" }
+
+  details.group
+    summary.text-xs.font-semibold.uppercase.tracking-wide.text-stone-500.mb-2.cursor-pointer.list-none.flex.items-center.justify-between.py-1.hover:text-stone-700
+      | Colour
+      span.text-stone-400.group-open:rotate-180.transition-transform aria-hidden="true" ▾
+    ul.space-y-0.5.mt-1
+      - Artwork::HUE_FAMILIES.each do |hue|
+        li
+          - active = facet_active?(facets, "colour", hue)
+          = link_to artworks_browse_path(facets.merge("colour" => hue)), class: facet_link_class(facets, "colour", hue), data: { turbo_frame: "artworks_results" }, aria: { label: "#{hue.titleize} colour filter" } do
+            span.inline-block.w-4.h-4.rounded-full.mr-2.align-middle.border.border-stone-300 class="#{'ring-2 ring-stone-900 ring-offset-1' if active}" style=hue_family_swatch_style(hue) aria-hidden="true"
+            = hue.titleize

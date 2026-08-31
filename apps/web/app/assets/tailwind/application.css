@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+@theme {
+  --color-accent: #c45c26;
+  --color-accent-hover: #a34a1e;
+  --color-accent-light: #fdf4ef;
+  --shadow-card: 0 1px 3px 0 rgb(28 25 23 / 0.06), 0 1px 2px -1px rgb(28 25 23 / 0.06);
+  --shadow-card-hover: 0 10px 15px -3px rgb(28 25 23 / 0.08), 0 4px 6px -4px rgb(28 25 23 / 0.06);
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-xl border border-stone-200 shadow-[var(--shadow-card)];
+  }
+
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-[var(--shadow-card-hover)] hover:-translate-y-0.5;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-5 py-2.5 bg-stone-900 text-white rounded-lg font-medium
+      hover:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-900 focus:ring-offset-2
+      transition-colors cursor-pointer;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-5 py-2.5 border border-stone-300 text-stone-800 rounded-lg font-medium
+      hover:bg-stone-50 focus:outline-none focus:ring-2 focus:ring-stone-400 focus:ring-offset-2
+      transition-colors;
+  }
+
+  .input-field {
+    @apply w-full rounded-lg border border-stone-300 px-3 py-2 text-sm
+      focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-700;
+  }
+
+  .chip-removable {
+    @apply inline-flex items-center gap-1 rounded-full bg-stone-900 text-white pl-3 pr-1.5 py-1 text-xs font-medium;
+  }
+
+  .meta-text {
+    @apply text-sm text-stone-500;
+  }
+
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50
+      focus:px-4 focus:py-2 focus:bg-white focus:text-stone-900 focus:rounded-lg focus:shadow-lg;
+  }
+
+  .facet-pill {
+    @apply block text-sm px-2.5 py-1.5 rounded-md hover:bg-stone-100 transition-colors;
+  }
+
+  .facet-pill-active {
+    @apply bg-stone-900 text-white hover:bg-stone-800;
+  }
+
+  .sort-pill {
+    @apply px-3 py-1.5 text-sm rounded-md transition-colors;
+  }
+
+  .sort-pill-active {
+    @apply bg-stone-900 text-white font-medium;
+  }
+
+  .sort-pill-inactive {
+    @apply text-stone-600 hover:bg-stone-100;
+  }
+}
