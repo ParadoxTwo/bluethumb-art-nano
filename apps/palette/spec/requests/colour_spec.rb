@@ -2,7 +2,6 @@
 
 require "spec_helper"
 require "securerandom"
-require "vips"
 
 RSpec.describe "Colour API", type: :request do
   describe "POST /colour/extract" do
@@ -61,6 +60,8 @@ RSpec.describe "Colour API", type: :request do
     end
 
     it "extracts a room palette and ranks artworks" do
+      require "vips"
+
       path = File.join(Dir.tmpdir, "match-room-#{Process.pid}-#{SecureRandom.hex(4)}.png")
       Vips::Image.black(48, 48, bands: 3)
                  .linear([0.0, 0.0, 0.0], [40.0, 120.0, 220.0])
