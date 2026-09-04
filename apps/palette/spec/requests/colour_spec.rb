@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require "spec_helper"
+require "securerandom"
+require "vips"
 
 RSpec.describe "Colour API", type: :request do
   describe "POST /colour/extract" do
@@ -50,12 +52,33 @@ RSpec.describe "Colour API", type: :request do
   end
 
   describe "POST /colour/match-room" do
-    it "returns a Phase 1 stub" do
+    it "returns 422 when no image is uploaded" do
       post "/colour/match-room", {}.to_json, "CONTENT_TYPE" => "application/json"
 
-      expect(last_response.status).to eq(501)
+      expect(last_response.status).to eq(422)
       body = JSON.parse(last_response.body)
-      expect(body.dig("error", "code")).to eq("not_implemented")
+      expect(body.dig("error", "code")).to eq("validation_error")
+    end
+
+    it "extracts a room palette and ranks artworks" do
+      path = File.join(Dir.tmpdir, "match-room-#{Process.pid}-#{SecureRandom.hex(4)}.png")
+      Vips::Image.black(48, 48, bands: 3)
+                 .linear([0.0, 0.0, 0.0], [40.0, 120.0, 220.0])
+                 .cast(:uchar)
+                 .write_to_file(path)
+
+      post "/colour/match-room", {
+        image: Rack::Test::UploadedFile.new(path, "image/png", original_filename: "room.png")
+      }
+
+      expect(last_response.status).to eq(200), last_response.body
+      body = JSON.parse(last_response.body)
+      expect(body).to include("artworks", "palette", "meta")
+      expect(body["palette"]).to include("centroid", "swatches", "hue_family")
+      expect(body.dig("palette", "hue_family")).to eq("blue")
+      expect(body["meta"]).to include("count", "query_ms")
+    ensure
+      File.delete(path) if path && File.exist?(path)
     end
   end
 end

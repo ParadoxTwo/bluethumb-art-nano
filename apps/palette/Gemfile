@@ -16,6 +16,7 @@ gem "i18n", "~> 1.14"
 gem "puma", ">= 7.1"
 gem "rake"
 gem "pg"
+gem "ruby-vips", "~> 2.2"
 
 group :development do
   gem "hanami-webconsole", "~> 3.0.0"

@@ -55,7 +55,14 @@ class ColourMatcher
     lab = seed_lab || centroid_for(artwork_id)
     return [] if lab.nil? || lab.any?(&:nil?)
 
-    rank(fetch_candidates(artwork_id), lab, limit: limit)
+    rank(fetch_candidates(exclude_id: artwork_id), lab, limit: limit)
+  end
+
+  # Rank the whole available catalogue against a room (or any) palette centroid.
+  def match_lab(lab, limit: DEFAULT_LIMIT)
+    return [] if lab.nil? || lab.any?(&:nil?)
+
+    rank(fetch_candidates, lab, limit: limit)
   end
 
   private
@@ -74,17 +81,20 @@ class ColourMatcher
     [row["palette_centroid_l"]&.to_f, row["palette_centroid_a"]&.to_f, row["palette_centroid_b"]&.to_f]
   end
 
-  def fetch_candidates(artwork_id)
-    connection.exec_params(
-      <<~SQL,
-        SELECT id, palette_centroid_l, palette_centroid_a, palette_centroid_b
-        FROM artworks
-        WHERE status = 'available'
-          AND id != $1
-          AND palette_centroid_l IS NOT NULL
-      SQL
-      [artwork_id]
-    ).map do |row|
+  def fetch_candidates(exclude_id: nil)
+    sql = <<~SQL
+      SELECT id, palette_centroid_l, palette_centroid_a, palette_centroid_b
+      FROM artworks
+      WHERE status = 'available'
+        AND palette_centroid_l IS NOT NULL
+    SQL
+    params = []
+    if exclude_id
+      sql += " AND id != $1"
+      params << exclude_id
+    end
+
+    connection.exec_params(sql, params).map do |row|
       {
         id: row["id"].to_i,
         l: row["palette_centroid_l"].to_f,

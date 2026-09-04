@@ -37,9 +37,11 @@ Not affiliated with [Bluethumb](https://bluethumb.com.au). All catalogue data an
 
 - Palette data seeded per artwork (`palette_data` jsonb + CIELAB centroid)
 - Hanami `/colour/similar/:id` — nearest-neighbour ranking by CIELAB distance
-- Hanami `/colour/extract` — procedural extraction from ActiveStorage images
+- Hanami `/colour/extract` — libvips histogram quantization (MMCQ-style) with procedural fallback
+- Hanami `/colour/match-room` — room photo upload → palette extract → ranked artworks
 - `bin/rails palettes:extract` — batch extraction via palette service
-- Colour picker island stub on artwork detail (wires to palette proxy)
+- Colour picker island on artwork detail (wires to palette proxy)
+- Match my room page + Vue island at `/match-room`
 
 ## Requirements
 
@@ -60,7 +62,7 @@ Visit `http://localhost:3000` — home page and browse at `/artworks` render in 
 
 ## Demo path (~3 min)
 
-Home → Style quiz **or** Browse → Artwork detail → Similar by colour → Cart → Checkout → Thank you
+Home → Style quiz **or** Match my room **or** Browse → Artwork detail → Similar by colour → Cart → Checkout → Thank you
 
 ## Testing
 

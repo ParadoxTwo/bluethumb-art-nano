@@ -5,10 +5,10 @@ require "dry/validation"
 module AppsPalette
   module Contracts
     module Colour
-      class Extract < Dry::Validation::Contract
+      class Similar < Dry::Validation::Contract
         params do
           required(:artwork_id).filled(:integer)
-          optional(:force).maybe(:bool)
+          optional(:hex).filled(:string, format?: /\A#?\h{6}\z/)
         end
       end
     end

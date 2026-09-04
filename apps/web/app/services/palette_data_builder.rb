@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class PaletteDataBuilder
+  # Keep in lockstep with PaletteExtractor#hue_family_for_rgb — seeds must use
+  # the same HSV buckets so browse facets match extracted palettes.
   HUE_FAMILIES = {
     (0..15) => "red",
     (16..45) => "orange",
@@ -10,6 +12,9 @@ class PaletteDataBuilder
     (251..330) => "purple",
     (331..360) => "red"
   }.freeze
+
+  NEUTRAL_SATURATION = 0.12
+  NEUTRAL_VALUE = 0.08
 
   def self.from_rgb(r, g, b)
     new(r, g, b).build
@@ -23,15 +28,13 @@ class PaletteDataBuilder
 
   def build
     l, a, b = rgb_to_lab(@r, @g, @b)
-    hue = lab_to_hue(a, b)
-    hue_family = hue_family_for(hue)
 
     {
       l: l.round(2),
       a: a.round(2),
       b: b.round(2),
       data: {
-        "hue_family" => hue_family,
+        "hue_family" => hue_family_for_rgb(@r, @g, @b),
         "centroid" => { "l" => l.round(2), "a" => a.round(2), "b" => b.round(2) },
         "swatches" => [
           {
@@ -73,16 +76,37 @@ class PaletteDataBuilder
     value > 0.008856 ? value**(1.0 / 3) : (7.787 * value) + (16.0 / 116)
   end
 
-  def lab_to_hue(a, b)
-    hue = Math.atan2(b, a) * 180 / Math::PI
-    hue += 360 if hue.negative?
-    hue
-  end
+  def hue_family_for_rgb(red, green, blue)
+    hue, saturation, value = rgb_to_hsv(red, green, blue)
+    return "neutral" if saturation < NEUTRAL_SATURATION || value < NEUTRAL_VALUE
 
-  def hue_family_for(hue)
     HUE_FAMILIES.each do |range, family|
       return family if range.cover?(hue.round)
     end
     "neutral"
+  end
+
+  def rgb_to_hsv(red, green, blue)
+    r = red / 255.0
+    g = green / 255.0
+    b = blue / 255.0
+    max = [r, g, b].max
+    min = [r, g, b].min
+    delta = max - min
+
+    hue =
+      if delta.zero?
+        0.0
+      elsif max == r
+        60 * (((g - b) / delta) % 6)
+      elsif max == g
+        60 * (((b - r) / delta) + 2)
+      else
+        60 * (((r - g) / delta) + 4)
+      end
+    hue += 360 if hue.negative?
+
+    saturation = max.zero? ? 0.0 : delta / max
+    [hue, saturation, max]
   end
 end

@@ -27,6 +27,23 @@ module PaletteWebmock
       )
   end
 
+  def stub_palette_match_room(returning:, palette: {})
+    artworks = Array(returning).map do |entry|
+      entry.is_a?(Hash) ? entry : { id: entry.id, distance: 0.1 }
+    end
+
+    stub_request(:post, "http://localhost:9292/colour/match-room")
+      .to_return(
+        status: 200,
+        body: {
+          artworks: artworks,
+          palette: palette,
+          meta: { count: artworks.size, query_ms: 1 }
+        }.to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
+  end
+
   def stub_palette_unavailable
     stub_request(:any, %r{http://localhost:9292/}).to_raise(Errno::ECONNREFUSED)
   end

@@ -1,20 +1,19 @@
 # frozen_string_literal: true
 
+require_relative "../../../slices/colour/contracts/extract"
+
 module AppsPalette
   module Actions
     module Colour
       class Extract < AppsPalette::Action
-        params do
-          required(:artwork_id).filled(:integer)
-          optional(:force).maybe(:bool)
-        end
-
         def handle(request, response)
-          unless request.params.valid?
-            return error_response(response, 422, "validation_error", request.params.errors.to_h)
+          result = AppsPalette::Contracts::Colour::Extract.new.call(extract_params(request))
+
+          unless result.success?
+            return error_response(response, 422, "validation_error", result.errors.to_h)
           end
 
-          artwork_id = request.params[:artwork_id]
+          artwork_id = result[:artwork_id]
           image_path = image_path_for(artwork_id)
 
           unless image_path
@@ -34,6 +33,14 @@ module AppsPalette
         end
 
         private
+
+        def extract_params(request)
+          raw = request.params.to_h
+          {
+            artwork_id: raw[:artwork_id] || raw["artwork_id"],
+            force: raw.key?(:force) || raw.key?("force") ? (raw[:force] || raw["force"]) : nil
+          }
+        end
 
         def connection
           PG.connect(ENV.fetch("DATABASE_URL"))

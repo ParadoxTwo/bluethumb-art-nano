@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: Bluethumb Art Nano — Palette Service API
-  version: 0.1.0
-  description: Phase 1 stub contract. Colour math lives in apps/palette only.
+  version: 0.2.0
+  description: Colour extraction and CIELAB ranking. Colour math lives in apps/palette only.
 servers:
   - url: http://localhost:9292
 paths:
@@ -22,7 +22,7 @@ paths:
                     example: ok
   /colour/extract:
     post:
-      summary: Extract palette for an artwork (Phase 1 stub)
+      summary: Extract palette for an artwork image on disk
       requestBody:
         required: true
         content:
@@ -37,10 +37,14 @@ paths:
                   type: boolean
                   default: false
       responses:
-        "501":
-          description: Not implemented (stub)
         "200":
-          description: Palette extracted
+          description: Palette extracted and persisted
+        "404":
+          description: Artwork or image missing
+        "422":
+          description: Validation error
+        "501":
+          description: Extraction unavailable for this image
   /colour/similar/{artwork_id}:
     get:
       summary: Similar artworks by palette, ranked in CIELAB
@@ -89,7 +93,7 @@ paths:
           description: Malformed seed colour
   /colour/match-room:
     post:
-      summary: Rank artworks by room photo palette (Phase 1 stub)
+      summary: Rank artworks by room photo palette
       requestBody:
         required: true
         content:
@@ -102,5 +106,36 @@ paths:
                   type: string
                   format: binary
       responses:
-        "501":
-          description: Not implemented (stub)
+        "200":
+          description: Room palette plus ranked artworks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  artworks:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer }
+                        distance: { type: number }
+                  palette:
+                    type: object
+                    properties:
+                      hue_family: { type: string }
+                      centroid:
+                        type: object
+                        properties:
+                          l: { type: number }
+                          a: { type: number }
+                          b: { type: number }
+                      swatches:
+                        type: array
+                  meta:
+                    type: object
+                    properties:
+                      count: { type: integer }
+                      query_ms: { type: integer }
+        "422":
+          description: Missing or invalid image / extract failure

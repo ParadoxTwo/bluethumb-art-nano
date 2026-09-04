@@ -136,11 +136,12 @@ flowchart TB
 | Templates            | Slim                         | All HTML views                                          |
 | Styles               | Tailwind CSS v4              | `tailwindcss-rails`, design tokens in `application.css` |
 | Interactivity        | Hotwire (Turbo + Stimulus)   | importmap — no npm bundler                              |
-| Islands              | Vanilla JS stub              | `islands/index.js`; Vue 3 planned, not wired            |
+| Islands              | Vue 3 islands (vendored)     | ColourPicker + RoomMatch; importmap, no bundler         |
 | Search               | `pg_search`                  | Full-text on title, description, artist name            |
 | Pagination           | Pagy                         | Default 24 items per page                               |
 | Images               | ActiveStorage (disk)         | Artwork primary + gallery images                        |
-| Validation (palette) | dry-validation               | Extract/match-room contracts                            |
+| Validation (palette) | dry-validation               | Extract / similar / match-room contracts                |
+| Colour extraction    | `ruby-vips` + VibrantPalette | Histogram quantization; procedural fallback             |
 | Tests                | RSpec + Capybara             | `bin/test` runs both apps                               |
 
 ---
@@ -328,8 +329,9 @@ apps/palette/
 │       └── match_room.rb
 ├── lib/
 │   ├── colour_matcher.rb      # ΔE76 distance ranking
-│   └── palette_extractor.rb   # Byte sampling → CIELAB → hue_family
-├── slices/colour/contracts/   # dry-validation (extract, match_room)
+│   ├── palette_extractor.rb   # VibrantPalette → CIELAB → hue_family
+│   └── vibrant_palette.rb     # libvips histogram quantization
+├── slices/colour/contracts/   # dry-validation (extract, similar, match_room)
 ├── config/
 │   ├── app.rb                 # JSON body parser middleware
 │   ├── routes.rb
@@ -344,21 +346,22 @@ apps/palette/
 | `GET`  | `/health`                     | Health check                                                    | Implemented  |
 | `POST` | `/colour/extract`             | Extract palette from ActiveStorage image; persist to `artworks` | Implemented  |
 | `GET`  | `/colour/similar/:artwork_id` | Rank neighbours by CIELAB ΔE76                                  | Implemented  |
-| `POST` | `/colour/match-room`          | Room photo → artwork ranking                                    | **501 stub** |
+| `POST` | `/colour/match-room`          | Room photo → artwork ranking                                    | Implemented  |
 
 Hanami reads/writes the shared `artworks` table via raw `PG` connections (not ActiveRecord). It reads ActiveStorage blob paths from `apps/web/storage` (configurable via `ACTIVE_STORAGE_ROOT`).
 
 ### Colour pipeline
 
 ```
-Image bytes (ActiveStorage)
+Image (ActiveStorage or room upload)
+  → VibrantPalette (libvips hist_find_ndim) or procedural fallback
   → PaletteExtractor
-       sample pixels, compute RGB centroid
-       convert to CIELAB (L*, a*, b*)
-       derive hue_family (red/orange/…/neutral)
-  → persist palette_data jsonb + palette_centroid_l/a/b columns
+       population-weighted CIELAB centroid
+       HSV hue_family (neutral when low saturation/value)
+  → persist palette_data jsonb + palette_centroid_l/a/b (extract)
+     or rank available artworks by ΔE76 (match-room / similar)
 
-Similarity query
+Similarity / match-room query
   → ColourMatcher
        load available artworks with centroids
        compute ΔE76 distance to source
@@ -545,11 +548,16 @@ All primary pages are **server-rendered Slim templates**. JavaScript enhances na
 | `flash`    | `flash_controller.js`   | Auto-dismiss flash messages after 5 seconds   |
 | `hello`    | `hello_controller.js`   | Rails scaffold stub (unused)                  |
 
-### JS islands (`app/javascript/islands/index.js`)
+### JS islands (`app/javascript/islands/`)
 
-Planned **Vue 3** colour-picker island. Current implementation is a **vanilla JS stub** that mounts on `[data-island-component]` elements. No view template currently renders a `data-island-component` attribute — the island is wired in JS only.
+Vendored **Vue 3** islands mounted on `[data-island-component]` placeholders with props in `data-island-props`:
 
-Import map (`config/importmap.rb`) pins Turbo, Stimulus, and islands — **no npm `package.json` or bundler**.
+| Island         | Mount                                | Role                                      |
+| -------------- | ------------------------------------ | ----------------------------------------- |
+| `ColourPicker` | Artwork detail when swatches exist   | Pick a swatch → colour-matches JSON       |
+| `RoomMatch`    | `/match-room`                        | Upload room photo → ranked artworks JSON  |
+
+Import map (`config/importmap.rb`) pins Turbo, Stimulus, Vue, and islands — **no npm `package.json` or bundler**.
 
 ### Layout (`layouts/application.html.slim`)
 
@@ -727,6 +735,7 @@ bin/rails palettes:extract                     # batch palette extraction via Ha
 - Session favourites and framing selector
 - Style quiz → facet URL
 - Palette extraction and CIELAB similar artworks
+- Match my room (upload → palette → ranked catalogue)
 - Full-text search
 
 ### Explicitly out of scope
@@ -741,10 +750,14 @@ bin/rails palettes:extract                     # batch palette extraction via Ha
 
 | Item                      | Status                                                |
 | ------------------------- | ----------------------------------------------------- |
-| Vue colour-picker island  | JS stub only; not mounted in templates                |
-| `/colour/match-room`      | 501 stub in Hanami                                    |
 | `PATCH cart_items#update` | Route exists; cart page has no framing update UI      |
 | README stack versions     | May differ from pinned Gemfile (Ruby 3.3.5, Hanami 3) |
+
+### Colour notes
+
+- Hue families use HSV buckets with a saturation/value gate for neutrals — not CIELAB hue angles.
+- `VibrantPalette` is a local libvips-backed stand-in for Bluethumb's unpublished `vibrant_palette` gem (histogram quantization → population-weighted swatches).
+- Centroid ranking answers "overall cast", not "contains this exact colour".
 
 ---
 
