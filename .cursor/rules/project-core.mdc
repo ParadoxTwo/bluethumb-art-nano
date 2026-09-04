@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Project core
 
-Monorepo: `apps/web` (Rails 8) + `apps/palette` (Hanami 2). Match Bluethumb's hybrid stack — not a React SPA.
+Monorepo: `apps/web` (Rails 8) + `apps/palette` (Hanami 3). Match Bluethumb's hybrid stack — not a React SPA.
 
 ## Start here
 

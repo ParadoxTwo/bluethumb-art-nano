@@ -4,7 +4,7 @@ Entry point for Claude sessions. Canonical agent instructions live in **[AGENTS.
 
 ## Quick facts
 
-- Monorepo: `apps/web` (Rails 8 — Slim, Tailwind, Hotwire, Vue 3 islands) + `apps/palette` (Hanami 2 — dry-rb). One PostgreSQL database; Rails owns catalogue migrations; colour logic lives **only** in Hanami; `artworks.palette_data` jsonb is the shared surface.
+- Monorepo: `apps/web` (Rails 8 — Slim, Tailwind, Hotwire, Vue 3 islands) + `apps/palette` (Hanami 3 — dry-rb). One PostgreSQL database; Rails owns catalogue migrations; colour logic lives **only** in Hanami; `artworks.palette_data` jsonb is the shared surface.
 - `bin/test` is the quality gate (RSpec in both apps, swaps DATABASE_URL to the test DB) — run it before calling anything done. `bin/dev` runs Rails :3000 + Hanami :9292 + Tailwind watch.
 - SSR is the point: the first page of `/artworks` renders tiles, result count, facets and pagination in HTML with no JS required. Facet state lives in composable URL path segments (`/artworks/style/abstract/price/500-1000`) — the URL is the source of truth.
 

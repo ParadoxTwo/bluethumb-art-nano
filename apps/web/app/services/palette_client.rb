@@ -6,6 +6,12 @@ require "securerandom"
 class PaletteClient
   class Error < StandardError; end
 
+  # Short on purpose. The artwork page calls this synchronously, so a palette
+  # service that is down or waking from a cold start must degrade the page in
+  # a couple of seconds, not hang it for Net::HTTP's default sixty.
+  OPEN_TIMEOUT = Float(ENV.fetch("PALETTE_OPEN_TIMEOUT", 2))
+  READ_TIMEOUT = Float(ENV.fetch("PALETTE_READ_TIMEOUT", 8))
+
   def initialize(base_url: ENV.fetch("PALETTE_SERVICE_URL", "http://localhost:9292"))
     @base_url = base_url
   end
@@ -69,10 +75,13 @@ class PaletteClient
   def request(method, path, body: nil)
     uri = URI.join("#{@base_url}/", path.sub(%r{\A/}, ""))
     http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = uri.scheme == "https"
+    http.open_timeout = OPEN_TIMEOUT
+    http.read_timeout = READ_TIMEOUT
     req = build_request(method, uri, body)
     response = http.request(req)
     parse_response(response)
-  rescue Errno::ECONNREFUSED => e
+  rescue Errno::ECONNREFUSED, Errno::ECONNRESET, SocketError, Net::OpenTimeout, Net::ReadTimeout => e
     raise Error, "Palette service unavailable: #{e.message}"
   end
 

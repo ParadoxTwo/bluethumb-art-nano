@@ -10,13 +10,15 @@ class PaletteProxyController < ApplicationController
     target.query = request.query_string if request.query_string.present?
 
     http = Net::HTTP.new(target.host, target.port)
+    http.use_ssl = target.scheme == "https"
+    http.open_timeout = PaletteClient::OPEN_TIMEOUT
     http.read_timeout = 30
 
     proxy_request = build_proxy_request(target)
     response = http.request(proxy_request)
 
     render plain: response.body, status: response.code.to_i, content_type: response.content_type
-  rescue Errno::ECONNREFUSED
+  rescue Errno::ECONNREFUSED, Errno::ECONNRESET, SocketError, Net::OpenTimeout, Net::ReadTimeout
     render json: { error: { code: "service_unavailable", message: "Palette service unavailable" } }, status: :service_unavailable
   end
 

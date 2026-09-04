@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Render build for the Hanami palette service. Runs from apps/palette.
+set -o errexit
+
+bundle install

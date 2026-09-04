@@ -17,6 +17,14 @@ RSpec.describe "Palette proxy", type: :request do
       expect(JSON.parse(response.body)).to eq("status" => "ok")
     end
 
+    it "returns 503 when the palette service times out" do
+      stub_request(:get, "http://localhost:9292/health").to_timeout
+
+      get "/palette/health"
+
+      expect(response).to have_http_status(:service_unavailable)
+    end
+
     it "returns 503 when palette service is unavailable" do
       stub_request(:get, "http://localhost:9292/health").to_raise(Errno::ECONNREFUSED)
 

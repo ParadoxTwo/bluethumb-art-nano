@@ -4,7 +4,7 @@ Read this before making changes. Public README is engineering-only; deeper conte
 
 ## Project
 
-Monorepo art marketplace demo: **Rails 8** (`apps/web`) + **Hanami 2** (`apps/palette`). Synthetic catalogue only. Specs required from the first commit.
+Monorepo art marketplace demo: **Rails 8** (`apps/web`) + **Hanami 3** (`apps/palette`). Synthetic catalogue only. Specs required from the first commit.
 
 ## Before coding
 

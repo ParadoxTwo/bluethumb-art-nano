@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Render build for the Rails app. Render runs this from apps/web (rootDir).
+set -o errexit
+set -o pipefail
+
+bundle install
+bin/rails assets:precompile
+bin/rails assets:clean
+bin/rails db:prepare
+
+# The catalogue is procedural and its images live on the instance disk, which
+# Render resets on every deploy, restart and spin-down. Regenerating here bakes
+# the images into the deploy image, so every file the database references is
+# guaranteed to exist at runtime. A production catalogue would put images in
+# object storage and never do this.
+ARTIST_COUNT="${SEED_ARTIST_COUNT:-20}" \
+ARTWORK_COUNT="${SEED_ARTWORK_COUNT:-150}" \
+  bin/rails artworks:regenerate

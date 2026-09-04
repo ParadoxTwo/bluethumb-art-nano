@@ -32,6 +32,22 @@ RSpec.describe PaletteClient do
     expect(described_class.new.extract(artwork_id: 3, force: true)).to eq("status" => "ok")
   end
 
+  it "speaks TLS when the service URL is https" do
+    stub_request(:get, "https://palette.example.test/health")
+      .to_return(status: 200, body: { status: "ok" }.to_json, headers: { "Content-Type" => "application/json" })
+
+    client = described_class.new(base_url: "https://palette.example.test")
+
+    expect(client.health).to eq("status" => "ok")
+  end
+
+  it "raises a palette error when the service does not answer in time" do
+    stub_request(:get, "http://localhost:9292/colour/similar/2").to_timeout
+
+    expect { described_class.new.similar(2) }
+      .to raise_error(PaletteClient::Error, /unavailable/)
+  end
+
   it "raises with palette error message on failure" do
     stub_request(:get, "http://localhost:9292/colour/similar/1")
       .to_return(

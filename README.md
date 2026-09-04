@@ -10,7 +10,7 @@ Not affiliated with [Bluethumb](https://bluethumb.com.au). All catalogue data an
 | ---------------- | ----------------------------------------- |
 | Runtime          | Ruby 3.4                                  |
 | Web app          | Rails 8                                   |
-| Services         | Hanami 2                                  |
+| Services         | Hanami 3                                  |
 | Validation / DI  | dry-rb (dry-validation, dry-monads)       |
 | Database         | PostgreSQL                                |
 | Templates        | Slim                                      |
@@ -83,13 +83,25 @@ bin/palette routes
 
 See [AGENTS.md](./AGENTS.md) for architecture boundaries and agent workflow.
 
+## Deploying to Render
+
+`render.yaml` is a Blueprint for two free web services sharing one free Postgres: `bluethumb-nano` (Rails) and `bluethumb-nano-palette` (Hanami). In the Render dashboard choose **New → Blueprint**, point it at this repository, and supply `RAILS_MASTER_KEY` (the contents of `apps/web/config/master.key`) when prompted.
+
+What the free tier dictates, and how the Blueprint answers it:
+
+- **Ephemeral disk.** Free instances lose their filesystem on every deploy, restart and spin-down, so `apps/web/bin/render-build` regenerates the procedural catalogue during the build; the images ship inside the deploy image. Catalogue size is `SEED_ARTWORK_COUNT` (default 150).
+- **Cold starts.** Free services spin down after 15 idle minutes and take about a minute to wake. `PaletteClient` uses short timeouts so an artwork page degrades to its server-rendered content immediately rather than hanging while the palette service wakes; the colour island recovers on the next tap. Open the site a few minutes before showing it.
+- **No private network for free services.** Rails calls the palette service over its public HTTPS address (`PALETTE_SERVICE_URL`). If Render had to suffix the palette service's name, update that variable after the first deploy.
+- **No shared disk.** `POST /colour/extract` reads image files, so on Render it returns 404 — the build already writes palette data for every artwork, and `GET /colour/similar` needs only the database.
+- **Free Postgres expires 30 days after creation** (14-day grace, then deleted). Recreate or upgrade it if the demo needs to outlive that.
+
 ## Architecture
 
 Monorepo with two Ruby apps:
 
 ```
 apps/web/              Rails 8 — marketplace UI, cart, faceted browse, checkout
-apps/palette/          Hanami 2 — palette extraction and colour search API
+apps/palette/          Hanami 3 — palette extraction and colour search API
 ```
 
 Rails owns HTML, sessions, and catalogue persistence. Hanami owns the colour domain: extracting palettes, computing CIELAB similarity, and serving JSON endpoints consumed by the Rails app and Vue islands.
