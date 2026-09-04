@@ -17,6 +17,7 @@ html
           nav.hidden.md:flex.items-center.gap-6.text-sm
             = link_to "Browse", artworks_path, class: nav_link_class(artworks_path)
             = link_to "Style quiz", discover_path, class: nav_link_class(discover_path)
+            = link_to "Match my room", match_room_path, class: nav_link_class(match_room_path)
           = form_with url: artworks_path, method: :get, class: "flex-1 max-w-md hidden sm:block" do
             label.sr-only for="header-search" Search artworks
             input#header-search.input-field type="search" name="q" placeholder="Search artworks…" value=params[:q] aria-label="Search artworks"
@@ -28,6 +29,7 @@ html
               .absolute.right-0.mt-2.w-48.bg-white.rounded-lg.border.border-stone-200.shadow-lg.py-2.z-30
                 = link_to "Browse", artworks_path, class: "block px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
                 = link_to "Style quiz", discover_path, class: "block px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
+                = link_to "Match my room", match_room_path, class: "block px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
                 = link_to "Sign in", login_path, class: "block px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
             = link_to "Sign in", login_path, class: "text-sm text-stone-600 hover:text-stone-900 hidden sm:inline"
             = link_to cart_path, class: "relative inline-flex items-center gap-1.5 text-sm text-stone-700 hover:text-stone-900" do

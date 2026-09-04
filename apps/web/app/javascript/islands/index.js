@@ -9,8 +9,9 @@
 // JSON in data-island-props.
 import { createApp } from "vue"
 import ColourPicker from "islands/colour_picker"
+import RoomMatch from "islands/room_match"
 
-const ISLANDS = { ColourPicker }
+const ISLANDS = { ColourPicker, RoomMatch }
 const mountedApps = new Map()
 
 function propsFor(element) {

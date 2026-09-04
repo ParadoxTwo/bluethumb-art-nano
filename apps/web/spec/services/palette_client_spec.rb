@@ -42,4 +42,24 @@ RSpec.describe PaletteClient do
 
     expect { described_class.new.similar(1) }.to raise_error(PaletteClient::Error, "No palette data")
   end
+
+  it "posts a room photo as multipart and returns ranked artworks" do
+    stub_request(:post, "http://localhost:9292/colour/match-room")
+      .to_return(
+        status: 200,
+        body: { artworks: [{ id: 2, distance: 1.5 }], palette: { hue_family: "blue" } }.to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
+
+    file = Tempfile.new(["room", ".png"])
+    file.write("png-bytes")
+    file.rewind
+    upload = Rack::Test::UploadedFile.new(file.path, "image/png", original_filename: "room.png")
+
+    expect(described_class.new.match_room(upload)).to include(
+      "artworks" => [{ "id" => 2, "distance" => 1.5 }]
+    )
+  ensure
+    file.close!
+  end
 end

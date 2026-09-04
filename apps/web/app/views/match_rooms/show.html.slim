@@ -1,0 +1,16 @@
+- content_for :title, "Match my room"
+
+section.mb-10.max-w-2xl
+  h1.text-3xl.md:text-4xl.font-semibold.tracking-tight Match my room
+  p.mt-4.text-stone-600.text-lg
+    | Upload a photo of your wall or living space. We extract its palette and rank artworks by CIELAB colour harmony — the overall cast of the room, not object detection.
+  p.mt-3.text-sm.text-stone-500
+    | Works best with a clear wall colour and natural light. Patterned wallpaper or heavy colour casts can pull the match toward accents rather than the wall itself.
+
+div data-island-component="RoomMatch" data-island-props=({ endpoint: match_room_path }.to_json)
+
+noscript
+  .card.mt-8.p-6.text-sm.text-stone-600
+    | JavaScript is needed to upload a room photo. You can still
+    =< link_to "browse by colour", artworks_browse_path("colour" => "blue"), class: "underline"
+    |  from the catalogue filters.

@@ -1,23 +1,22 @@
 # frozen_string_literal: true
 
+require_relative "../../../slices/colour/contracts/similar"
+
 module AppsPalette
   module Actions
     module Colour
       class Similar < AppsPalette::Action
         # ?hex= lets a caller rank against a colour the buyer picked rather
         # than the artwork's own centroid. Without it, behaviour is unchanged.
-        params do
-          required(:artwork_id).filled(:integer)
-          optional(:hex).filled(:string, format?: /\A#?\h{6}\z/)
-        end
-
         def handle(request, response)
-          unless request.params.valid?
-            return error_response(response, 422, "validation_error", request.params.errors.to_h)
+          result = AppsPalette::Contracts::Colour::Similar.new.call(similar_params(request))
+
+          unless result.success?
+            return error_response(response, 422, "validation_error", result.errors.to_h)
           end
 
-          artwork_id = request.params[:artwork_id]
-          hex = request.params[:hex]
+          artwork_id = result[:artwork_id]
+          hex = result[:hex]
           matcher = ColourMatcher.new
           seed_lab = hex ? matcher.lab_for_hex(hex) : nil
 
@@ -38,6 +37,14 @@ module AppsPalette
         end
 
         private
+
+        def similar_params(request)
+          raw = request.params.to_h
+          {
+            artwork_id: raw[:artwork_id] || raw["artwork_id"],
+            hex: raw[:hex] || raw["hex"]
+          }.compact
+        end
 
         def seed_descriptor(artwork_id, hex, seed_lab)
           return { artwork_id: artwork_id } unless hex

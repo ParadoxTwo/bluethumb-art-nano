@@ -1,8 +1,13 @@
 # frozen_string_literal: true
 
 require "json"
+require "time"
+require_relative "vibrant_palette"
 
 class PaletteExtractor
+  # HSV-style buckets (red at 0°, blue near 240°). hue_family_for_rgb converts
+  # the source RGB through HSV before bucketing — CIELAB hue angles are a
+  # different wheel and misfile primaries when used here.
   HUE_FAMILIES = {
     (0..15) => "red",
     (16..45) => "orange",
@@ -13,23 +18,29 @@ class PaletteExtractor
     (331..360) => "red"
   }.freeze
 
-  def extract(image_path)
-    return procedural_from_path(image_path) if File.file?(image_path)
+  # Below this HSV saturation a colour reads as neutral to a buyer, regardless
+  # of the (meaningless) hue angle on a grey.
+  NEUTRAL_SATURATION = 0.12
+  NEUTRAL_VALUE = 0.08
 
-    :not_implemented
+  def extract(image_path)
+    return :not_implemented unless image_path && File.file?(image_path)
+
+    swatches = VibrantPalette.extract(image_path)
+    return :not_implemented if swatches.empty?
+
+    from_swatches(swatches)
+  rescue VibrantPalette::Error
+    procedural_from_path(image_path)
   rescue StandardError
     :not_implemented
   end
 
   def extract_from_rgb(red, green, blue)
-    # Name the LAB axes apart from the RGB channels. They were both called
-    # b, so the swatch hex was built from the b* axis - usually negative -
-    # rather than from the blue channel.
     lightness, a_axis, b_axis = rgb_to_lab(red, green, blue)
-    hue = lab_to_hue(a_axis, b_axis)
 
     {
-      hue_family: hue_family_for(hue),
+      hue_family: hue_family_for_rgb(red, green, blue),
       centroid: { l: lightness.round(2), a: a_axis.round(2), b: b_axis.round(2) },
       swatches: [
         {
@@ -44,11 +55,52 @@ class PaletteExtractor
 
   private
 
+  def from_swatches(swatches)
+    total = swatches.sum(&:population).to_f
+    total = 1.0 if total <= 0
+
+    lab_swatches = swatches.map do |swatch|
+      l, a, b = rgb_to_lab(swatch.r, swatch.g, swatch.b)
+      {
+        hex: rgb_to_hex(swatch.r, swatch.g, swatch.b),
+        population: (swatch.population / total).round(4),
+        lab: { l: l, a: a, b: b },
+        rgb: { r: swatch.r, g: swatch.g, b: swatch.b }
+      }
+    end
+
+    centroid = weighted_centroid(lab_swatches)
+    dominant = swatches.max_by(&:population)
+
+    {
+      hue_family: hue_family_for_rgb(dominant.r, dominant.g, dominant.b),
+      centroid: {
+        l: centroid[0].round(2),
+        a: centroid[1].round(2),
+        b: centroid[2].round(2)
+      },
+      swatches: lab_swatches.map { |entry| entry.slice(:hex, :population, :lab) },
+      extracted_at: Time.now.utc.iso8601
+    }
+  end
+
+  def weighted_centroid(lab_swatches)
+    lab_swatches.reduce([0.0, 0.0, 0.0]) do |(l, a, b), entry|
+      weight = entry[:population]
+      [
+        l + entry[:lab][:l] * weight,
+        a + entry[:lab][:a] * weight,
+        b + entry[:lab][:b] * weight
+      ]
+    end
+  end
+
   def procedural_from_path(image_path)
     bytes = File.binread(image_path)
     return :not_implemented if bytes.bytesize < 64
 
-    # Sample bytes from PNG payload region for a deterministic average colour.
+    # Fallback when libvips is unavailable: sample PNG payload bytes for a
+    # deterministic average colour so seeds/rake still work in constrained envs.
     sample = bytes.bytes.each_slice(3).first(200).map { |chunk| chunk.sum / chunk.size }
     r = sample[0..63].sum / 64
     g = sample[64..127].sum / 64
@@ -83,17 +135,38 @@ class PaletteExtractor
     value > 0.008856 ? value**(1.0 / 3) : (7.787 * value) + (16.0 / 116)
   end
 
-  def lab_to_hue(a, b)
-    hue = Math.atan2(b, a) * 180 / Math::PI
-    hue += 360 if hue.negative?
-    hue
-  end
+  def hue_family_for_rgb(red, green, blue)
+    hue, saturation, value = rgb_to_hsv(red, green, blue)
+    return "neutral" if saturation < NEUTRAL_SATURATION || value < NEUTRAL_VALUE
 
-  def hue_family_for(hue)
     HUE_FAMILIES.each do |range, family|
       return family if range.cover?(hue.round)
     end
     "neutral"
+  end
+
+  def rgb_to_hsv(red, green, blue)
+    r = red / 255.0
+    g = green / 255.0
+    b = blue / 255.0
+    max = [r, g, b].max
+    min = [r, g, b].min
+    delta = max - min
+
+    hue =
+      if delta.zero?
+        0.0
+      elsif max == r
+        60 * (((g - b) / delta) % 6)
+      elsif max == g
+        60 * (((b - r) / delta) + 2)
+      else
+        60 * (((r - g) / delta) + 4)
+      end
+    hue += 360 if hue.negative?
+
+    saturation = max.zero? ? 0.0 : delta / max
+    [hue, saturation, max]
   end
 
   def rgb_to_hex(*channels)

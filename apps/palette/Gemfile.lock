@@ -339,6 +339,9 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.13.0)
     rspec-support (3.13.7)
+    ruby-vips (2.3.0)
+      ffi (~> 1.12)
+      logger
     sequel (5.107.0)
       bigdecimal
     shellany (0.0.1)
@@ -390,6 +393,7 @@ DEPENDENCIES
   rack-test
   rake
   rouge
+  ruby-vips (~> 2.2)
 
 BUNDLED WITH
    2.5.16

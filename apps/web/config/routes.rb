@@ -9,6 +9,9 @@ Rails.application.routes.draw do
   patch "discover", to: "discover#update"
   post "discover", to: "discover#update"
 
+  get "match-room", to: "match_rooms#show", as: :match_room
+  post "match-room", to: "match_rooms#create"
+
   get "login", to: "logins#show", as: :login
 
   resource :cart, only: :show

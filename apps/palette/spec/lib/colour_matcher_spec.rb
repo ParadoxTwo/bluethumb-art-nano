@@ -84,6 +84,21 @@ RSpec.describe ColourMatcher do
     end
   end
 
+  describe "#match_lab" do
+    it "ranks every available candidate against the seed" do
+      ranked = matcher.rank(
+        [
+          { id: 1, l: 55.0, a: 12.0, b: -3.0 },
+          { id: 2, l: 10.0, a: -40.0, b: 60.0 }
+        ],
+        [50.0, 10.0, -5.0]
+      )
+
+      expect(matcher.match_lab(nil)).to eq([])
+      expect(ranked.first[:id]).to eq(1)
+    end
+  end
+
   describe "#similar_artworks" do
     it "returns nothing for an artwork that is not in the database" do
       expect(matcher.similar_artworks(-1)).to eq([])
