@@ -1,4 +1,4 @@
-= link_to artwork_path(artwork), class: "group block card-hover" do
+= link_to artwork_path(artwork), class: "group block card-hover", data: { turbo_frame: "_top" } do
   .relative
     div class="aspect-[4/5] overflow-hidden rounded-xl bg-stone-200"
       = artwork_image_tag artwork, class: "h-full w-full object-cover group-hover:scale-105 transition-transform duration-300", alt: artwork.title

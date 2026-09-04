@@ -1,5 +1,13 @@
 # frozen_string_literal: true
 
+# importmap-rails boots via an inline module script (`import "application"`).
+# Without a per-request nonce, script-src 'self' blocks it and Vue islands never
+# mount — the server placeholder stays an empty div.
+Rails.application.configure do
+  config.content_security_policy_nonce_generator = ->(_request) { SecureRandom.base64(16) }
+  config.content_security_policy_nonce_directives = %w[script-src]
+end
+
 Rails.application.config.content_security_policy do |policy|
   policy.default_src :self, :https
   policy.font_src    :self, :https, :data

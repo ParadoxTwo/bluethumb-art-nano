@@ -54,6 +54,11 @@ function unmountIslands() {
   mountedApps.clear()
 }
 
-document.addEventListener("DOMContentLoaded", mountIslands)
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", mountIslands)
+} else {
+  mountIslands()
+}
+
 document.addEventListener("turbo:load", mountIslands)
 document.addEventListener("turbo:before-cache", unmountIslands)
