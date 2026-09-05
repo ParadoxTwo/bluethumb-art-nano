@@ -16,3 +16,34 @@ bin/rails db:prepare
 ARTIST_COUNT="${SEED_ARTIST_COUNT:-20}" \
 ARTWORK_COUNT="${SEED_ARTWORK_COUNT:-150}" \
   bin/rails artworks:regenerate
+
+# Generation only records the base colour it drew with. Real palettes come from
+# the palette service, which quantises the finished image with libvips - and
+# since the two services have separate disks here, the bytes are uploaded
+# rather than read from a shared path.
+#
+# A free instance may be asleep, so wait for it. Never fail the deploy over
+# this: the site works with generator palettes, it just offers one swatch per
+# artwork instead of several.
+if [ -n "${PALETTE_SERVICE_URL:-}" ]; then
+  echo "==> Waiting for the palette service at ${PALETTE_SERVICE_URL}"
+  palette_up=0
+  for _ in $(seq 1 30); do
+    if curl -sf -o /dev/null --max-time 5 "${PALETTE_SERVICE_URL}/health"; then
+      palette_up=1
+      break
+    fi
+    sleep 5
+  done
+
+  if [ "$palette_up" = "1" ]; then
+    echo "==> Extracting palettes"
+    PALETTE_EXTRACT_UPLOAD=1 PALETTE_OPEN_TIMEOUT=10 PALETTE_READ_TIMEOUT=60 \
+      bin/rails palettes:extract
+  else
+    echo "==> Palette service did not answer in 150s; keeping generator palettes."
+    echo "    Run 'PALETTE_EXTRACT_UPLOAD=1 bin/rails palettes:extract' once it is up."
+  fi
+else
+  echo "==> PALETTE_SERVICE_URL unset; skipping palette extraction."
+fi

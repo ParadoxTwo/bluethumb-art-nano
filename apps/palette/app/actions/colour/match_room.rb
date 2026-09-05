@@ -17,7 +17,7 @@ module AppsPalette
             return error_response(response, 422, "validation_error", result.errors.to_h)
           end
 
-          path = persist_upload(uploaded)
+          path = UploadedImage.persist(uploaded, prefix: "match-room")
           begin
             palette = PaletteExtractor.new.extract(path)
             if palette == :not_implemented
@@ -52,36 +52,7 @@ module AppsPalette
 
         def uploaded_image(request)
           params = request.params
-          image = params[:image] || params["image"]
-          return image if image.is_a?(Hash) || image.respond_to?(:[])
-
-          # Rack multipart sometimes surfaces as an UploadedFile-like object.
-          if image.respond_to?(:tempfile) || image.respond_to?(:path)
-            {
-              tempfile: image.respond_to?(:tempfile) ? image.tempfile : File.open(image.path),
-              type: image.respond_to?(:content_type) ? image.content_type : nil,
-              size: image.respond_to?(:size) ? image.size : nil,
-              filename: image.respond_to?(:original_filename) ? image.original_filename : nil
-            }
-          end
-        end
-
-        def persist_upload(uploaded)
-          tempfile = uploaded[:tempfile] || uploaded["tempfile"]
-          ext = extension_for(uploaded)
-          path = File.join(Dir.tmpdir, "match-room-#{Process.pid}-#{SecureRandom.hex(8)}#{ext}")
-          IO.copy_stream(tempfile, path)
-          tempfile.rewind if tempfile.respond_to?(:rewind)
-          path
-        end
-
-        def extension_for(uploaded)
-          type = uploaded[:type] || uploaded["type"].to_s
-          case type
-          when "image/png" then ".png"
-          when "image/webp" then ".webp"
-          else ".jpg"
-          end
+          UploadedImage.normalise(params[:image] || params["image"])
         end
 
         def error_response(response, status, code, details)

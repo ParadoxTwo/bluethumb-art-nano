@@ -7,39 +7,59 @@ module AppsPalette
     module Colour
       class Extract < AppsPalette::Action
         def handle(request, response)
-          result = AppsPalette::Contracts::Colour::Extract.new.call(extract_params(request))
+          raw = request.params.to_h
+          uploaded = UploadedImage.normalise(raw[:image] || raw["image"])
+          result = AppsPalette::Contracts::Colour::Extract.new.call(extract_params(raw, uploaded))
 
           unless result.success?
             return error_response(response, 422, "validation_error", result.errors.to_h)
           end
 
           artwork_id = result[:artwork_id]
-          image_path = image_path_for(artwork_id)
+          image_path, temporary = source_image(artwork_id, uploaded)
 
           unless image_path
             return error_response(response, 404, "not_found", { artwork_id: artwork_id })
           end
 
-          palette = PaletteExtractor.new.extract(image_path)
-          if palette == :not_implemented
-            return not_implemented_response(response, artwork_id)
+          begin
+            palette = PaletteExtractor.new.extract(image_path)
+            if palette == :not_implemented
+              return not_implemented_response(response, artwork_id)
+            end
+
+            persist_palette!(artwork_id, palette)
+
+            response.status = 200
+            response.format = :json
+            response.body = {
+              artwork_id: artwork_id,
+              source: temporary ? "upload" : "disk",
+              palette: palette
+            }.to_json
+          ensure
+            File.delete(image_path) if temporary && File.exist?(image_path)
           end
-
-          persist_palette!(artwork_id, palette)
-
-          response.status = 200
-          response.format = :json
-          response.body = { artwork_id: artwork_id, palette: palette }.to_json
         end
 
         private
 
-        def extract_params(request)
-          raw = request.params.to_h
-          {
+        # Callers that share a disk with this service can just name the
+        # artwork; callers that do not - Rails on Render, where each service
+        # gets its own filesystem - send the bytes instead.
+        def source_image(artwork_id, uploaded)
+          return [UploadedImage.persist(uploaded, prefix: "extract"), true] if uploaded
+
+          [image_path_for(artwork_id), false]
+        end
+
+        def extract_params(raw, uploaded)
+          params = {
             artwork_id: raw[:artwork_id] || raw["artwork_id"],
             force: raw.key?(:force) || raw.key?("force") ? (raw[:force] || raw["force"]) : nil
           }
+          params[:image] = uploaded if uploaded
+          params
         end
 
         def connection

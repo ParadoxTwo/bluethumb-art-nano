@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require "cgi"
+require "net/http"
+require "openssl"
 require "securerandom"
 
 class PaletteClient
@@ -12,6 +14,11 @@ class PaletteClient
   OPEN_TIMEOUT = Float(ENV.fetch("PALETTE_OPEN_TIMEOUT", 2))
   READ_TIMEOUT = Float(ENV.fetch("PALETTE_READ_TIMEOUT", 8))
 
+  NETWORK_ERRORS = [
+    Errno::ECONNREFUSED, Errno::ECONNRESET, SocketError,
+    Net::OpenTimeout, Net::ReadTimeout, OpenSSL::SSL::SSLError
+  ].freeze
+
   def initialize(base_url: ENV.fetch("PALETTE_SERVICE_URL", "http://localhost:9292"))
     @base_url = base_url
   end
@@ -20,8 +27,17 @@ class PaletteClient
     get("/health")
   end
 
-  def extract(artwork_id:, force: false)
-    post("/colour/extract", body: { artwork_id: artwork_id, force: force })
+  # Naming the artwork asks the service to find the file on its own disk.
+  # Passing an image sends the bytes instead, which is the only thing that
+  # works when the two services do not share a filesystem.
+  def extract(artwork_id:, force: false, image: nil)
+    return post("/colour/extract", body: { artwork_id: artwork_id, force: force }) if image.nil?
+
+    post_multipart(
+      "/colour/extract",
+      file: image,
+      fields: { "artwork_id" => artwork_id.to_s, "force" => force.to_s }
+    )
   end
 
   # hex ranks against a colour the buyer picked; omitted, the service ranks
@@ -33,35 +49,67 @@ class PaletteClient
   end
 
   def match_room(upload)
-    uri = URI.join("#{@base_url}/", "colour/match-room")
-    http = Net::HTTP.new(uri.host, uri.port)
-    request = Net::HTTP::Post.new(uri)
-    request["Accept"] = "application/json"
-    boundary, body = multipart_body(upload)
-    request["Content-Type"] = "multipart/form-data; boundary=#{boundary}"
-    request.body = body
-    parse_response(http.request(request))
-  rescue Errno::ECONNREFUSED => e
-    raise Error, "Palette service unavailable: #{e.message}"
+    post_multipart("/colour/match-room", file: upload)
   end
 
   private
 
-  def multipart_body(upload)
-    boundary = "----RubyFormBoundary#{SecureRandom.hex(16)}"
-    path = upload.respond_to?(:tempfile) ? upload.tempfile.path : upload.path
-    content_type = upload.respond_to?(:content_type) ? upload.content_type.to_s : "image/jpeg"
-    content_type = "image/jpeg" if content_type.blank?
-    filename = upload.respond_to?(:original_filename) ? upload.original_filename : File.basename(path)
-    file_bytes = File.binread(path)
+  # Went through the plain request path before, which meant no TLS: against an
+  # https service URL that fails outright rather than degrading.
+  def post_multipart(path, file:, fields: {})
+    uri = URI.join("#{@base_url}/", path.sub(%r{\A/}, ""))
+    request = Net::HTTP::Post.new(uri)
+    request["Accept"] = "application/json"
+    boundary, body = multipart_body(file, fields)
+    request["Content-Type"] = "multipart/form-data; boundary=#{boundary}"
+    request.body = body
+    parse_response(build_http(uri).request(request))
+  rescue *NETWORK_ERRORS => e
+    raise Error, "Palette service unavailable: #{e.message}"
+  end
 
-    body = +""
+  def build_http(uri)
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = uri.scheme == "https"
+    http.open_timeout = OPEN_TIMEOUT
+    http.read_timeout = READ_TIMEOUT
+    http
+  end
+
+  # Built on a binary string: appending PNG bytes to a UTF-8 buffer is only
+  # safe while everything before it is ASCII, which is a trap waiting for a
+  # non-ASCII filename.
+  def multipart_body(file, fields = {})
+    boundary = "----RubyFormBoundary#{SecureRandom.hex(16)}"
+    path, content_type, filename = file_parts(file)
+
+    body = "".b
+    fields.each do |name, value|
+      body << "--#{boundary}\r\n"
+      body << "Content-Disposition: form-data; name=\"#{name}\"\r\n\r\n"
+      body << value.to_s
+      body << "\r\n"
+    end
     body << "--#{boundary}\r\n"
     body << "Content-Disposition: form-data; name=\"image\"; filename=\"#{filename}\"\r\n"
     body << "Content-Type: #{content_type}\r\n\r\n"
-    body << file_bytes
+    body << File.binread(path)
     body << "\r\n--#{boundary}--\r\n"
     [boundary, body]
+  end
+
+  # Accepts an uploaded file from a controller, or a plain hash from a batch
+  # job that already has the bytes on disk.
+  def file_parts(file)
+    if file.is_a?(Hash)
+      path = file[:path]
+      [path, file[:content_type].presence || "image/jpeg", file[:filename].presence || File.basename(path)]
+    else
+      path = file.respond_to?(:tempfile) ? file.tempfile.path : file.path
+      content_type = file.respond_to?(:content_type) ? file.content_type.to_s : ""
+      filename = file.respond_to?(:original_filename) ? file.original_filename : File.basename(path)
+      [path, content_type.presence || "image/jpeg", filename]
+    end
   end
 
   def get(path)
@@ -74,14 +122,10 @@ class PaletteClient
 
   def request(method, path, body: nil)
     uri = URI.join("#{@base_url}/", path.sub(%r{\A/}, ""))
-    http = Net::HTTP.new(uri.host, uri.port)
-    http.use_ssl = uri.scheme == "https"
-    http.open_timeout = OPEN_TIMEOUT
-    http.read_timeout = READ_TIMEOUT
     req = build_request(method, uri, body)
-    response = http.request(req)
+    response = build_http(uri).request(req)
     parse_response(response)
-  rescue Errno::ECONNREFUSED, Errno::ECONNRESET, SocketError, Net::OpenTimeout, Net::ReadTimeout => e
+  rescue *NETWORK_ERRORS => e
     raise Error, "Palette service unavailable: #{e.message}"
   end
 

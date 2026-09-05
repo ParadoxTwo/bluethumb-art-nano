@@ -22,7 +22,11 @@ paths:
                     example: ok
   /colour/extract:
     post:
-      summary: Extract palette for an artwork image on disk
+      summary: Extract and store the palette for an artwork
+      description: >-
+        Send JSON naming the artwork when this service can read the same files
+        Rails wrote. Send multipart with the image when it cannot - separate
+        filesystems, object storage, or a one-off re-extraction.
       requestBody:
         required: true
         content:
@@ -36,13 +40,37 @@ paths:
                 force:
                   type: boolean
                   default: false
+          multipart/form-data:
+            schema:
+              type: object
+              required: [artwork_id, image]
+              properties:
+                artwork_id:
+                  type: integer
+                force:
+                  type: boolean
+                image:
+                  type: string
+                  format: binary
+                  description: PNG, JPEG or WebP, up to 8MB.
       responses:
         "200":
-          description: Palette extracted and persisted
+          description: Palette extracted and stored
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  artwork_id: { type: integer }
+                  source:
+                    type: string
+                    enum: [upload, disk]
+                    description: Where the bytes came from.
+                  palette: { type: object }
         "404":
-          description: Artwork or image missing
+          description: No image found for that artwork on this service's disk
         "422":
-          description: Validation error
+          description: Invalid params, or an image this service will not accept
         "501":
           description: Extraction unavailable for this image
   /colour/similar/{artwork_id}:

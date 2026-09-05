@@ -92,7 +92,7 @@ What the free tier dictates, and how the Blueprint answers it:
 - **Ephemeral disk.** Free instances lose their filesystem on every deploy, restart and spin-down, so `apps/web/bin/render-build` regenerates the procedural catalogue during the build; the images ship inside the deploy image. Catalogue size is `SEED_ARTWORK_COUNT` (default 150).
 - **Cold starts.** Free services spin down after 15 idle minutes and take about a minute to wake. `PaletteClient` uses short timeouts so an artwork page degrades to its server-rendered content immediately rather than hanging while the palette service wakes; the colour island recovers on the next tap. Open the site a few minutes before showing it.
 - **No private network for free services.** Rails calls the palette service over its public HTTPS address (`PALETTE_SERVICE_URL`). If Render had to suffix the palette service's name, update that variable after the first deploy.
-- **No shared disk.** `POST /colour/extract` reads image files, so on Render it returns 404 — the build already writes palette data for every artwork, and `GET /colour/similar` needs only the database.
+- **No shared disk.** `POST /colour/extract` can either name an artwork (and read the file itself) or take the image bytes as a multipart upload. On Render the services have separate filesystems, so the build waits for the palette service and then runs `PALETTE_EXTRACT_UPLOAD=1 bin/rails palettes:extract`, which sends each image. If the service never answers the deploy still succeeds, with the generator's single-colour palettes.
 - **Free Postgres expires 30 days after creation** (14-day grace, then deleted). Recreate or upgrade it if the demo needs to outlive that.
 
 ## Architecture
