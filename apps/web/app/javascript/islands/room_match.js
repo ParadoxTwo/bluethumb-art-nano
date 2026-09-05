@@ -3,6 +3,7 @@
 // Progressive enhancement: the server page already explains the feature and
 // links to colour browse. This island is the interactive cut only.
 import { h, ref } from "vue"
+import { fetchWakingService } from "palette_service"
 
 export default {
   name: "RoomMatch",
@@ -14,6 +15,9 @@ export default {
   setup(props) {
     const status = ref("idle") // idle | loading | ready | empty | error
     const errorMessage = ref("")
+    // See colour_picker.js: the palette service sleeps, and an upload is the
+    // most expensive thing a visitor can lose to a cold start.
+    const waking = ref(false)
     const results = ref([])
     const swatches = ref([])
     const fileName = ref("")
@@ -28,6 +32,7 @@ export default {
       latestRequest += 1
       status.value = "idle"
       errorMessage.value = ""
+      waking.value = false
       results.value = []
       swatches.value = []
       fileName.value = ""
@@ -40,6 +45,7 @@ export default {
       const request = ++latestRequest
       fileName.value = file.name
       errorMessage.value = ""
+      waking.value = false
       status.value = "loading"
       results.value = []
       swatches.value = []
@@ -48,15 +54,23 @@ export default {
       body.append("image", file)
 
       try {
-        const response = await fetch(props.endpoint, {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "X-CSRF-Token": csrfToken()
+        const response = await fetchWakingService(
+          props.endpoint,
+          {
+            method: "POST",
+            headers: {
+              Accept: "application/json",
+              "X-CSRF-Token": csrfToken()
+            },
+            body,
+            credentials: "same-origin"
           },
-          body,
-          credentials: "same-origin"
-        })
+          {
+            onWaking: () => {
+              if (request === latestRequest) waking.value = true
+            }
+          }
+        )
         if (request !== latestRequest) return
 
         const payload = await response.json().catch(() => ({}))
@@ -66,10 +80,12 @@ export default {
 
         results.value = payload.artworks || []
         swatches.value = (payload.palette && payload.palette.swatches) || []
+        waking.value = false
         status.value = results.value.length ? "ready" : "empty"
       } catch (error) {
         if (request !== latestRequest) return
         errorMessage.value = error.message
+        waking.value = false
         status.value = "error"
       } finally {
         event.target.value = ""
@@ -94,6 +110,12 @@ export default {
           })
         ))
       ])
+    }
+
+    function wakingNotice() {
+      if (!waking.value) return null
+      return h("p", { class: "meta-text mt-6", role: "status" },
+        "Waking the colour service - it sleeps between visits. Your photo is still queued; this takes a few seconds.")
     }
 
     function loadingSkeleton() {
@@ -139,7 +161,7 @@ export default {
     }
 
     function statusPanel() {
-      if (status.value === "loading") return loadingSkeleton()
+      if (status.value === "loading") return [wakingNotice(), loadingSkeleton()]
       if (status.value === "empty") {
         return h("p", { class: "mt-8 rounded-lg border border-stone-200 bg-white p-4 text-sm text-stone-600" },
           "No artworks with palette data sit near that room colour yet.")

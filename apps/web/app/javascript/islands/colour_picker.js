@@ -8,6 +8,7 @@
 // Uses a render function (not an inline template string) so Vue does not need
 // the runtime compiler — which would require CSP 'unsafe-eval'.
 import { computed, h, ref } from "vue"
+import { fetchWakingService } from "palette_service"
 
 export default {
   name: "ColourPicker",
@@ -22,6 +23,10 @@ export default {
     const results = ref([])
     const status = ref("idle") // idle | loading | ready | empty | error
     const errorMessage = ref("")
+    // The palette service is a separate free instance that sleeps. A first
+    // request after a spin-down is answered by the edge, not the service, so
+    // waiting is the correct behaviour - but only if we say we are waiting.
+    const waking = ref(false)
 
     // Monotonic token: a slow first request must never overwrite the results
     // of a faster second one.
@@ -38,6 +43,7 @@ export default {
       activeHex.value = null
       results.value = []
       errorMessage.value = ""
+      waking.value = false
       status.value = "idle"
     }
 
@@ -47,11 +53,20 @@ export default {
       const request = ++latestRequest
       activeHex.value = hex
       errorMessage.value = ""
+      waking.value = false
       status.value = "loading"
 
       try {
         const url = props.endpoint + "?hex=" + encodeURIComponent(hex)
-        const response = await fetch(url, { headers: { Accept: "application/json" } })
+        const response = await fetchWakingService(
+          url,
+          { headers: { Accept: "application/json" } },
+          {
+            onWaking: () => {
+              if (request === latestRequest) waking.value = true
+            }
+          }
+        )
         if (request !== latestRequest) return
 
         if (!response.ok) {
@@ -63,10 +78,12 @@ export default {
         if (request !== latestRequest) return
 
         results.value = payload.artworks || []
+        waking.value = false
         status.value = results.value.length ? "ready" : "empty"
       } catch (error) {
         if (request !== latestRequest) return
         errorMessage.value = error.message
+        waking.value = false
         status.value = "error"
       }
     }
@@ -86,6 +103,12 @@ export default {
           onClick: () => select(swatch.hex)
         })
       )
+    }
+
+    function wakingNotice() {
+      if (!waking.value) return null
+      return h("p", { class: "meta-text mt-4", role: "status" },
+        "Waking the colour service - it sleeps between visits. This takes a few seconds.")
     }
 
     function loadingSkeleton() {
@@ -131,7 +154,7 @@ export default {
     }
 
     function statusPanel() {
-      if (status.value === "loading") return loadingSkeleton()
+      if (status.value === "loading") return [wakingNotice(), loadingSkeleton()]
       if (status.value === "empty") {
         return h("p", { class: "card mt-6 p-4 text-sm text-stone-600" },
           "Nothing else in the catalogue sits near that colour yet.")

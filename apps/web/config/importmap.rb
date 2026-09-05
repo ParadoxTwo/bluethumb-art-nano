@@ -10,6 +10,7 @@ pin_all_from "app/javascript/controllers", under: "controllers"
 # Islands use render functions so the runtime-only build would suffice; the full
 # browser build is pinned for now in case a second island wants template strings.
 pin "vue", to: "vue.esm-browser.prod.js"
+pin "palette_service", to: "palette_service.js"
 pin "islands", to: "islands/index.js"
 pin "islands/colour_picker", to: "islands/colour_picker.js"
 pin "islands/room_match", to: "islands/room_match.js"

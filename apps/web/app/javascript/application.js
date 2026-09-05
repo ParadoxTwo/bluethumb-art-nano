@@ -2,3 +2,6 @@
 import "@hotwired/turbo-rails"
 import "controllers"
 import "islands"
+import { warmPaletteService } from "palette_service"
+
+warmPaletteService()
