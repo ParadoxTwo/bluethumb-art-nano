@@ -66,6 +66,28 @@ RSpec.describe "Artwork show", type: :request do
       expect(response.body).not_to include("data-island-component")
     end
 
+    # Reproduces a live 500. A free Render instance can take ~30s to wake, and
+    # while it does the edge in front of it answers 502 with an HTML page, not
+    # JSON. The artwork page must lose its colour rail, not itself.
+    it "still renders when the palette service answers with a non-JSON error page" do
+      require "webmock/rspec"
+
+      source = create(:artwork, :with_palette, artist: artist, title: "Waking Service", slug: "waking-service")
+
+      WebMock.disable_net_connect!
+      stub_request(:get, %r{http://localhost:9292/colour/similar/\d+}).to_return(
+        status: 502,
+        body: "<html><body><h1>502 Bad Gateway</h1></body></html>",
+        headers: { "Content-Type" => "text/html" }
+      )
+
+      get artwork_path(source.slug)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Waking Service")
+      expect(response.body).not_to include("More like this, by colour")
+    end
+
     it "omits similar-by-colour section when palette service is unavailable" do
       require "webmock/rspec"
 

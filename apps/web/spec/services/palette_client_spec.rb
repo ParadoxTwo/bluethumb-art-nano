@@ -89,6 +89,24 @@ RSpec.describe PaletteClient do
     File.delete(png) if png && File.exist?(png)
   end
 
+  it "raises a palette error rather than a parser error when the reply is not JSON" do
+    stub_request(:get, "http://localhost:9292/colour/similar/3").to_return(
+      status: 502,
+      body: "<html><body>502 Bad Gateway</body></html>",
+      headers: { "Content-Type" => "text/html" }
+    )
+
+    expect { described_class.new.similar(3) }
+      .to raise_error(PaletteClient::Error, /502 with a non-JSON body/)
+  end
+
+  it "raises a palette error when a 200 carries a body it cannot parse" do
+    stub_request(:get, "http://localhost:9292/health")
+      .to_return(status: 200, body: "not json at all", headers: { "Content-Type" => "text/plain" })
+
+    expect { described_class.new.health }.to raise_error(PaletteClient::Error)
+  end
+
   it "raises with palette error message on failure" do
     stub_request(:get, "http://localhost:9292/colour/similar/1")
       .to_return(

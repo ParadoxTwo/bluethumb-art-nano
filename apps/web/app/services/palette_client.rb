@@ -141,11 +141,24 @@ class PaletteClient
   end
 
   def parse_response(response)
-    body = response.body.present? ? JSON.parse(response.body) : {}
+    body = parse_body(response)
     return body if response.is_a?(Net::HTTPSuccess)
 
     error = body["error"]
     message = error.is_a?(Hash) ? error["message"] : error
     raise Error, message.presence || "Palette service error (#{response.code})"
+  end
+
+  # Not everything that answers is the palette service. A proxy in front of it
+  # - Render's edge while a free instance wakes, which can take half a minute -
+  # replies with an HTML error page. Parsing that raised JSON::ParserError,
+  # which is not a PaletteClient::Error, so it went straight past every rescue
+  # and turned a sleeping colour service into a 500 on the artwork page.
+  def parse_body(response)
+    return {} if response.body.blank?
+
+    JSON.parse(response.body)
+  rescue JSON::ParserError
+    raise Error, "Palette service returned #{response.code} with a non-JSON body"
   end
 end

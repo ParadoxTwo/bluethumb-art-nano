@@ -17,6 +17,19 @@ RSpec.describe "Palette proxy", type: :request do
       expect(JSON.parse(response.body)).to eq("status" => "ok")
     end
 
+    it "answers JSON when the upstream returns an HTML error page" do
+      stub_request(:get, "http://localhost:9292/health").to_return(
+        status: 502,
+        body: "<html><body>502 Bad Gateway</body></html>",
+        headers: { "Content-Type" => "text/html" }
+      )
+
+      get "/palette/health"
+
+      expect(response).to have_http_status(:bad_gateway)
+      expect(response.parsed_body.dig("error", "code")).to eq("bad_gateway")
+    end
+
     it "returns 503 when the palette service times out" do
       stub_request(:get, "http://localhost:9292/health").to_timeout
 
